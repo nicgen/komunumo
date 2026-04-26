@@ -33,6 +33,12 @@ frontend/.vercel/
 *.swo
 .DS_Store
 
+# Claude Code (sessions, settings, state may carry secrets)
+.claude/
+!.claude/settings.json
+.aider*
+.cursor/
+
 # Build artefacts
 docs/dossier/build/*.pdf
 docs/dossier/build/*.tex
