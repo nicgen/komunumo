@@ -59,7 +59,7 @@ Feature: Connexion
     Given un compte vérifié existe avec email "anne@example.org" et mot de passe correct
     When l'utilisateur soumet ces credentials sur /login
     Then une session est créée en base
-    And un cookie session_id (HttpOnly, Secure, SameSite=Lax, Domain=.hello-there.net) est posé
+    And un cookie session_id (HttpOnly, Secure, SameSite=Lax, Domain=.local.hello-there.net) est posé
     And l'utilisateur est redirigé vers /home
     And l'audit log enregistre "login_success"
 
@@ -152,7 +152,7 @@ Tables : `accounts`, `members`, `associations`, `memberships`, `sessions`, `emai
 
 ### Sécurité
 - bcrypt cost 12 (mesurer en CI : doit prendre ~250ms).
-- Cookie `__Host-session` recommandé (impose Secure, Path=/, pas de Domain - alternative : `Domain=.hello-there.net` si besoin cross-subdomain).
+- Cookie `__Host-session` recommandé (impose Secure, Path=/, pas de Domain - alternative : `Domain=.local.hello-there.net` si besoin cross-subdomain).
 - CSRF token sur tous les POST sensibles (double-submit pattern).
 - Headers : CSP strict, HSTS, X-Frame-Options DENY.
 - Rate limiting via middleware Go (token bucket par IP + par compte).
@@ -168,4 +168,4 @@ Tables : `accounts`, `members`, `associations`, `memberships`, `sessions`, `emai
 ## Open questions
 
 - Choix final `<EMAIL_PROVIDER>` (Brevo recommandé).
-- Cookie `Domain=.hello-there.net` : besoin du domaine final pour valider (cf. Q1 ouverte).
+- Cookie `Domain=.local.hello-there.net` : besoin du domaine final pour valider (cf. Q1 ouverte).

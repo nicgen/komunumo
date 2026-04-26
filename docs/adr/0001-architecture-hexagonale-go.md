@@ -2,6 +2,7 @@
 
 - Statut : Accepté
 - Date : 2026-04-26
+- Révisé : 2026-04-26 (clarification factuelle sur la localisation des interfaces, pas de changement de décision)
 - Décideur : nic
 
 ## Contexte
@@ -26,6 +27,8 @@ cmd/server/main.go  # composition root
 ```
 
 Les use cases ne dépendent que des **interfaces** des ports, jamais des implémentations.
+
+**Note sur la localisation des interfaces** : Go idiomatique veut "interface définie par le consommateur, pas par le producteur" (cf. proverbe Go "Accept interfaces, return structs"). Le package `internal/ports/` regroupe néanmoins les contrats parce que (a) plusieurs use cases consomment les mêmes ports, (b) la lisibilité jury et la traçabilité des contrats hexagonaux priment ici sur la stricte idiomaticité. Cette entorse mineure est assumée et documentée.
 
 ## Alternatives écartées
 

@@ -77,7 +77,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 | V14.4.2 - X-Frame-Options DENY | Oui |
 | V14.4.3 - Referrer-Policy strict-origin-when-cross-origin | Oui |
 | V14.4.4 - X-Content-Type-Options nosniff | Oui |
-| V14.5.1 - CORS strict | Allow uniquement `app.hello-there.net` ; `Access-Control-Allow-Credentials: true` |
+| V14.5.1 - CORS strict | Allow uniquement `app.local.hello-there.net` ; `Access-Control-Allow-Credentials: true` |
 
 ## Anti-abus
 

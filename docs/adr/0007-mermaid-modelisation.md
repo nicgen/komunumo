@@ -1,6 +1,6 @@
 # ADR-0007 - Mermaid pour la modélisation UML et ER
 
-- Statut : Accepté
+- Statut : **Partiellement remplacé par [ADR-0013](./0013-looping-merise-mermaid-uml.md)** — Mermaid reste pour UML ; le MCD/MLD/MPD passe sur Looping pour conformité Merise IE.
 - Date : 2026-04-26
 - Décideur : nic
 

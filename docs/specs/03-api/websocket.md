@@ -1,6 +1,6 @@
 # Contrat WebSocket - AssoLink
 
-URL : `wss://api.hello-there.net/v1/ws`
+URL : `wss://api.local.hello-there.net/v1/ws`
 
 ## Authentification
 

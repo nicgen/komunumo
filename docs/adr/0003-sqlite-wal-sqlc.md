@@ -2,11 +2,12 @@
 
 - Statut : Accepté
 - Date : 2026-04-26
+- Révisé : 2026-04-26 (correction des chiffres de débit, pas de changement de décision)
 - Décideur : nic
 
 ## Contexte
 
-Le brief CDA exige une base **relationnelle SQL**. La cible AssoLink (associations + TPE/PME locales, < 10k MAU pilote) ne nécessite pas un SGBD réseau. La performance SQLite en WAL atteint 50k+ écritures/sec, largement au-dessus de la charge prévue. Le projet doit rester sobre énergétiquement (argument différenciant) et simple à exploiter.
+Le brief CDA exige une base **relationnelle SQL**. La cible AssoLink (associations + TPE/PME locales, < 10k MAU pilote) ne nécessite pas un SGBD réseau. La performance SQLite en WAL soutenue atteint **plusieurs milliers d'écritures/sec sur SSD avec `synchronous=NORMAL`** (1k-5k réalistes selon la taille des transactions, jusqu'à 50k+ en bulk insert sans fsync), largement au-dessus de la charge prévue (~10 écritures/sec en pic MVP, < 1 en moyenne). Le projet doit rester sobre énergétiquement (argument différenciant) et simple à exploiter.
 
 ## Décision
 

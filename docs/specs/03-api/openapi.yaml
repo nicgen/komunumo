@@ -11,9 +11,9 @@ info:
     name: AGPL-3.0
 
 servers:
-  - url: https://api.hello-there.net/v1
+  - url: https://api.local.hello-there.net/v1
     description: Production
-  - url: https://staging-api.hello-there.net/v1
+  - url: https://staging-api.local.hello-there.net/v1
     description: Staging
   - url: http://localhost:8080/v1
     description: Dev local
