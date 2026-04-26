@@ -60,26 +60,26 @@ frontend/
 
 **CRITIQUE** : aucune US ne peut commencer avant la fin de cette phase.
 
-- [ ] T010 Create migration `backend/internal/adapters/db/migrations/0001_init_auth.up.sql` with the 5 tables + indexes + audit triggers (cf. data-model.md)
-- [ ] T011 [P] Create migration `backend/internal/adapters/db/migrations/0001_init_auth.down.sql` reversing T010
-- [ ] T012 Create `backend/internal/adapters/db/openconn.go` opening SQLite via `modernc.org/sqlite` with `PRAGMA journal_mode=WAL` + `PRAGMA foreign_keys=ON` + `PRAGMA busy_timeout=5000`
-- [ ] T013 [P] Create empty domain types `backend/internal/domain/account/account.go` (struct Account, Status enum, errors)
-- [ ] T014 [P] Create empty domain types `backend/internal/domain/session/session.go` (struct Session + errors)
-- [ ] T015 [P] Create empty domain types `backend/internal/domain/token/token.go` (struct Token, Kind enum + errors)
-- [ ] T016 [P] Create empty domain types `backend/internal/domain/audit/event.go` (struct Event + EventType constants from data-model nomenclature)
-- [ ] T017 [P] Declare port interfaces in `backend/internal/ports/account_repository.go`, `session_repository.go`, `token_repository.go`, `audit_repository.go`, `email_sender.go`, `password_hasher.go`, `clock.go`, `token_generator.go`, `rate_limiter.go`, `unit_of_work.go` (signatures from contracts/ports.md)
-- [ ] T018 [P] Implement `backend/internal/adapters/clock/system_clock.go` (returns `time.Now().UTC()`)
-- [ ] T019 [P] Implement `backend/internal/adapters/password/bcrypt_hasher.go` (cost 12, no test yet)
-- [ ] T020 [P] Implement `backend/internal/adapters/tokengen/uuid_token_gen.go` (UUID v7 + crypto/rand 32 bytes + SHA-256)
-- [ ] T021 [P] Implement `backend/internal/adapters/ratelimit/in_memory.go` (token bucket, key-based map)
-- [ ] T022 [P] Implement `backend/internal/adapters/http/middleware/security_headers.go` (CSP strict, HSTS 31536000, X-Frame-Options DENY, Referrer-Policy strict-origin-when-cross-origin)
-- [ ] T023 [P] Implement `backend/internal/adapters/http/middleware/csrf.go` (double-submit cookie `__Host-csrf` + header `X-CSRF-Token`)
-- [ ] T024 [P] Implement `backend/internal/adapters/http/middleware/rate_limit.go` consuming `ports.RateLimiter`
-- [ ] T025 [P] Implement structured logging in `backend/internal/adapters/log/slog.go` (slog JSON, redacts `password`, `password_hash`, `token`, `email` fields)
-- [ ] T026 Wire composition root in `backend/cmd/server/main.go`: load env, open DB, instantiate adapters, mount router (handlers vides → 501)
-- [ ] T027 [P] Create frontend layout `frontend/app/(auth)/layout.tsx` (centered, accessible main landmark, skip-link)
-- [ ] T028 [P] Create frontend `frontend/lib/api.ts` (typed fetch wrapper, includes credentials, attaches CSRF header from cookie)
-- [ ] T029 [P] Create frontend `frontend/lib/auth.ts` (server-side helper reading `__Host-session` cookie + GET /api/v1/auth/me)
+- [x] T010 Create migration `backend/internal/adapters/db/migrations/0001_init_auth.up.sql` with the 5 tables + indexes + audit triggers (cf. data-model.md)
+- [x] T011 [P] Create migration `backend/internal/adapters/db/migrations/0001_init_auth.down.sql` reversing T010
+- [x] T012 Create `backend/internal/adapters/db/openconn.go` opening SQLite via `modernc.org/sqlite` with `PRAGMA journal_mode=WAL` + `PRAGMA foreign_keys=ON` + `PRAGMA busy_timeout=5000`
+- [x] T013 [P] Create empty domain types `backend/internal/domain/account/account.go` (struct Account, Status enum, errors)
+- [x] T014 [P] Create empty domain types `backend/internal/domain/session/session.go` (struct Session + errors)
+- [x] T015 [P] Create empty domain types `backend/internal/domain/token/token.go` (struct Token, Kind enum + errors)
+- [x] T016 [P] Create empty domain types `backend/internal/domain/audit/event.go` (struct Event + EventType constants from data-model nomenclature)
+- [x] T017 [P] Declare port interfaces in `backend/internal/ports/account_repository.go`, `session_repository.go`, `token_repository.go`, `audit_repository.go`, `email_sender.go`, `password_hasher.go`, `clock.go`, `token_generator.go`, `rate_limiter.go`, `unit_of_work.go` (signatures from contracts/ports.md)
+- [x] T018 [P] Implement `backend/internal/adapters/clock/system_clock.go` (returns `time.Now().UTC()`)
+- [x] T019 [P] Implement `backend/internal/adapters/password/bcrypt_hasher.go` (cost 12, no test yet)
+- [x] T020 [P] Implement `backend/internal/adapters/tokengen/uuid_token_gen.go` (UUID v7 + crypto/rand 32 bytes + SHA-256)
+- [x] T021 [P] Implement `backend/internal/adapters/ratelimit/in_memory.go` (token bucket, key-based map)
+- [x] T022 [P] Implement `backend/internal/adapters/http/middleware/security_headers.go` (CSP strict, HSTS 31536000, X-Frame-Options DENY, Referrer-Policy strict-origin-when-cross-origin)
+- [x] T023 [P] Implement `backend/internal/adapters/http/middleware/csrf.go` (double-submit cookie `__Host-csrf` + header `X-CSRF-Token`)
+- [x] T024 [P] Implement `backend/internal/adapters/http/middleware/rate_limit.go` consuming `ports.RateLimiter`
+- [x] T025 [P] Implement structured logging in `backend/internal/adapters/log/slog.go` (slog JSON, redacts `password`, `password_hash`, `token`, `email` fields)
+- [x] T026 Wire composition root in `backend/cmd/server/main.go`: load env, open DB, instantiate adapters, mount router (handlers vides → 501)
+- [x] T027 [P] Create frontend layout `frontend/app/(auth)/layout.tsx` (centered, accessible main landmark, skip-link)
+- [x] T028 [P] Create frontend `frontend/lib/api.ts` (typed fetch wrapper, includes credentials, attaches CSRF header from cookie)
+- [x] T029 [P] Create frontend `frontend/lib/auth.ts` (server-side helper reading `__Host-session` cookie + GET /api/v1/auth/me)
 
 **Checkpoint**: `make migrate-up` produit les 5 tables ; `make run` démarre, écoute `:8080`, sert un `404` propre ; `pnpm dev` démarre, page `/login` route 200 mais vide.
 
