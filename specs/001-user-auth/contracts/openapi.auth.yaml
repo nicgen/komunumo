@@ -1,0 +1,357 @@
+openapi: 3.1.0
+info:
+  title: Komunumo - Auth API (feature 001-user-auth)
+  version: 0.1.0
+  description: |
+    Contrat HTTP pour la feature `auth`. Extrait — la version canonique consolidée
+    vivra dans `docs/specs/03-api/openapi.yaml` lors de l'agrégation V1.
+
+    Conventions transverses :
+    - Tous les endpoints acceptent `application/json` ET
+      `application/x-www-form-urlencoded` (cf. D-010, dégradation gracieuse sans JS).
+    - Les réponses suivent deux modes selon `Accept`:
+      - `application/json` → JSON structuré (UI JS / clients).
+      - `text/html` → 303 See Other vers une page (formulaires HTML natifs).
+    - Tous les POST authentifiés exigent l'en-tête `X-CSRF-Token`
+      (valeur du cookie `__Host-csrf`, cf. D-009).
+    - Les erreurs métier suivent RFC 7807 (`application/problem+json`).
+    - Anti-énumération : `/login` et `/password-reset/request` retournent toujours
+      le même statut 200 que le compte existe ou non (cf. FR-008).
+
+servers:
+  - url: https://api.local.hello-there.net/api/v1
+    description: Dev local via Traefik
+  - url: https://api.komunumo.fr/api/v1
+    description: Démo soutenance Scaleway
+
+tags:
+  - name: auth
+    description: Inscription, connexion, vérification, reset, déconnexion.
+  - name: session
+    description: Lecture de la session courante.
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Créer un compte (status = pending_verification)
+      description: |
+        Génère un email de vérification (token usage unique, expire 24 h).
+        Soumis au rate limit 5/IP/heure (cf. D-008).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Compte créé, email de vérification envoyé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+        '303':
+          description: Mode HTML — redirection vers `/verify-email/sent`.
+          headers:
+            Location: { schema: { type: string }, example: /verify-email/sent }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409':
+          description: Email déjà utilisé (réponse identique à 201 côté UI pour anti-énumération — l'API documente le 409 mais les handlers retournent 201 générique).
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/verify-email:
+    post:
+      tags: [auth]
+      summary: Consommer un token de vérification d'email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TokenRequest' }
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/TokenRequest' }
+      responses:
+        '200':
+          description: Email vérifié — compte passe à `verified`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VerifyEmailResponse' }
+        '303':
+          description: Redirection vers `/login?verified=1`.
+        '400': { $ref: '#/components/responses/InvalidToken' }
+        '410': { $ref: '#/components/responses/ExpiredToken' }
+
+  /auth/resend-verification:
+    post:
+      tags: [auth]
+      summary: Renvoyer un email de vérification (annule les tokens précédents)
+      description: Rate limit 1/email/15 min.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmailRequest' }
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/EmailRequest' }
+      responses:
+        '200':
+          description: Email renvoyé (réponse générique anti-énumération).
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Authentifier un compte et ouvrir une session
+      description: |
+        En cas de succès, pose le cookie `__Host-session` (HttpOnly, Secure,
+        SameSite=Strict, Path=/, durée 30 j) et `__Host-csrf` (HttpOnly=false).
+        Sur 5 échecs/IP/15 min → blocage 30 min (HTTP 429).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Connecté.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: Deux cookies — `__Host-session` et `__Host-csrf`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '303':
+          description: Redirection vers `/` ou paramètre `?next=...` validé.
+        '401': { $ref: '#/components/responses/InvalidCredentials' }
+        '403': { $ref: '#/components/responses/PendingVerification' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Fermer la session courante
+      description: Supprime la session côté serveur ET efface les cookies.
+      security:
+        - sessionCookie: []
+      responses:
+        '204':
+          description: Déconnecté.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: Cookies expirés (`Max-Age=0`).
+        '303':
+          description: Redirection vers `/`.
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /auth/password-reset/request:
+    post:
+      tags: [auth]
+      summary: Demander un email de reset (token à usage unique, 30 min)
+      description: |
+        Anti-énumération — réponse 200 identique que l'email existe ou non.
+        Rate limit 3/email/heure.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmailRequest' }
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/EmailRequest' }
+      responses:
+        '200':
+          description: Email envoyé si compte existe (réponse générique).
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [auth]
+      summary: Consommer un token de reset et changer le mot de passe
+      description: |
+        Sur succès, **toutes** les sessions du compte sont révoquées (cf. data-model
+        invariant Session). L'utilisateur doit se reconnecter.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetConfirmRequest' }
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/PasswordResetConfirmRequest' }
+      responses:
+        '200':
+          description: Mot de passe changé.
+        '303':
+          description: Redirection vers `/login?password_changed=1`.
+        '400': { $ref: '#/components/responses/InvalidToken' }
+        '410': { $ref: '#/components/responses/ExpiredToken' }
+
+  /auth/me:
+    get:
+      tags: [session]
+      summary: Profil minimal de la session courante
+      description: Utilisé par le frontend RSC pour gating SSR.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Compte courant.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-session
+
+  schemas:
+    Email:
+      type: string
+      format: email
+      maxLength: 254
+      example: alice@asso-paris.fr
+    Password:
+      type: string
+      minLength: 12
+      maxLength: 128
+      writeOnly: true
+      description: Min 12 chars, au moins 1 maj, 1 min, 1 chiffre, 1 spécial.
+    UUIDv7:
+      type: string
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+
+    RegisterRequest:
+      type: object
+      required: [email, password, first_name, last_name, date_of_birth, accept_terms]
+      properties:
+        email: { $ref: '#/components/schemas/Email' }
+        password: { $ref: '#/components/schemas/Password' }
+        first_name: { type: string, minLength: 1, maxLength: 80 }
+        last_name: { type: string, minLength: 1, maxLength: 80 }
+        date_of_birth:
+          type: string
+          format: date
+          description: ISO 8601 — l'âge calculé doit être >= 16 ans.
+        accept_terms: { type: boolean, enum: [true] }
+
+    RegisterResponse:
+      type: object
+      properties:
+        account_id: { $ref: '#/components/schemas/UUIDv7' }
+        status: { type: string, enum: [pending_verification] }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { $ref: '#/components/schemas/Email' }
+        password: { $ref: '#/components/schemas/Password' }
+        next:
+          type: string
+          description: URL relative de redirection post-login (validation stricte côté serveur).
+
+    LoginResponse:
+      type: object
+      properties:
+        account_id: { $ref: '#/components/schemas/UUIDv7' }
+        first_name: { type: string }
+
+    EmailRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { $ref: '#/components/schemas/Email' }
+
+    TokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, minLength: 32 }
+
+    PasswordResetConfirmRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token: { type: string, minLength: 32 }
+        password: { $ref: '#/components/schemas/Password' }
+
+    VerifyEmailResponse:
+      type: object
+      properties:
+        account_id: { $ref: '#/components/schemas/UUIDv7' }
+        status: { type: string, enum: [verified] }
+
+    Me:
+      type: object
+      properties:
+        account_id: { $ref: '#/components/schemas/UUIDv7' }
+        email: { $ref: '#/components/schemas/Email' }
+        first_name: { type: string }
+        last_name: { type: string }
+        status: { type: string, enum: [verified] }
+
+    Problem:
+      type: object
+      description: RFC 7807.
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              code: { type: string }
+              message: { type: string }
+
+  responses:
+    ValidationError:
+      description: Champ invalide (mot de passe trop faible, email malformé, age < 16, etc.).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    InvalidCredentials:
+      description: Email/mot de passe invalides (réponse uniforme anti-énumération).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    PendingVerification:
+      description: Compte non vérifié — l'utilisateur doit consulter ses emails.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    InvalidToken:
+      description: Token inconnu, mal formé, ou déjà consommé.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ExpiredToken:
+      description: Token expiré (24 h pour vérification, 30 min pour reset).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthenticated:
+      description: Cookie `__Host-session` absent, expiré ou invalide.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: Quota dépassé.
+      headers:
+        Retry-After:
+          schema: { type: integer }
+          description: Secondes avant nouvelle tentative.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
