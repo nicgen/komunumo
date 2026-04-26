@@ -1,0 +1,71 @@
+services:
+  traefik:
+    image: traefik:v3.2
+    container_name: komunumo-traefik
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/etc/traefik/certs:ro
+    networks:
+      - komunumo
+
+  backend:
+    image: golang:1.24-alpine
+    container_name: komunumo-backend
+    working_dir: /app
+    command: ["go", "run", "./cmd/server"]
+    environment:
+      KOMUNUMO_HTTP_ADDR: ":8080"
+      KOMUNUMO_SQLITE_DSN: "/data/komunumo.db"
+      KOMUNUMO_BREVO_API_KEY: "${KOMUNUMO_BREVO_API_KEY:-test-key-noop}"
+      KOMUNUMO_PUBLIC_BASE_URL: "https://app.local.hello-there.net"
+    volumes:
+      - ../../backend:/app
+      - backend-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.local.hello-there.net`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+    networks:
+      - komunumo
+
+  frontend:
+    image: node:22-alpine
+    container_name: komunumo-frontend
+    working_dir: /app
+    command: ["pnpm", "dev"]
+    environment:
+      KOMUNUMO_API_INTERNAL_URL: "http://backend:8080"
+      NEXT_PUBLIC_BASE_URL: "https://app.local.hello-there.net"
+    volumes:
+      - ../../frontend:/app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`app.local.hello-there.net`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    networks:
+      - komunumo
+
+volumes:
+  backend-data:
+
+networks:
+  komunumo:
+    driver: bridge

@@ -40,15 +40,15 @@ frontend/
 
 **Purpose**: bootstrap des deux sous-projets backend/frontend pour pouvoir lancer test/lint/migrate.
 
-- [ ] T001 Initialize Go module at `backend/go.mod` with module path `komunumo/backend` and Go 1.24
-- [ ] T002 [P] Create `backend/Makefile` with targets `test`, `test-domain`, `test-application`, `test-adapters`, `test-http`, `migrate-up`, `migrate-down`, `sqlc`, `run`
-- [ ] T003 [P] Add backend deps via `go get`: `modernc.org/sqlite`, `golang.org/x/crypto/bcrypt`, `github.com/google/uuid`, `github.com/go-chi/chi/v5`, `github.com/golang-migrate/migrate/v4`, `github.com/stretchr/testify`
-- [ ] T004 [P] Configure `backend/sqlc.yaml` pointing to `internal/adapters/db/queries/` (input) and `internal/adapters/db/sqlc/` (output) with engine sqlite
-- [ ] T005 [P] Configure `backend/.golangci.yml` with linters: errcheck, govet, ineffassign, staticcheck, gosec, misspell
-- [ ] T006 [P] Initialize frontend Next.js 16 project at `frontend/` (App Router, TS, Tailwind v4) with `pnpm create next-app`
-- [ ] T007 [P] Install frontend deps in `frontend/`: `zod`, `react-hook-form`, shadcn/ui CLI bootstrap, axe-core (`@axe-core/react`), `@playwright/test`
-- [ ] T008 [P] Create `frontend/next.config.ts` with rewrites `/api/:path*` → `process.env.KOMUNUMO_API_INTERNAL_URL`
-- [ ] T009 [P] Create `infra/local/docker-compose.yml` with Traefik + mkcert volume for `*.local.hello-there.net` HTTPS
+- [x] T001 Initialize Go module at `backend/go.mod` with module path `komunumo/backend` and Go 1.24
+- [x] T002 [P] Create `backend/Makefile` with targets `test`, `test-domain`, `test-application`, `test-adapters`, `test-http`, `migrate-up`, `migrate-down`, `sqlc`, `run`
+- [x] T003 [P] Add backend deps via `go get`: `modernc.org/sqlite`, `golang.org/x/crypto/bcrypt`, `github.com/google/uuid`, `github.com/go-chi/chi/v5`, `github.com/golang-migrate/migrate/v4`, `github.com/stretchr/testify`
+- [x] T004 [P] Configure `backend/sqlc.yaml` pointing to `internal/adapters/db/queries/` (input) and `internal/adapters/db/sqlc/` (output) with engine sqlite
+- [x] T005 [P] Configure `backend/.golangci.yml` with linters: errcheck, govet, ineffassign, staticcheck, gosec, misspell
+- [x] T006 [P] Initialize frontend Next.js 16 project at `frontend/` (App Router, TS, Tailwind v4) with `pnpm create next-app`
+- [x] T007 [P] Install frontend deps in `frontend/`: `zod`, `react-hook-form`, shadcn/ui CLI bootstrap, axe-core (`@axe-core/react`), `@playwright/test`
+- [x] T008 [P] Create `frontend/next.config.ts` with rewrites `/api/:path*` → `process.env.KOMUNUMO_API_INTERNAL_URL`
+- [x] T009 [P] Create `infra/local/docker-compose.yml` with Traefik + mkcert volume for `*.local.hello-there.net` HTTPS
 
 **Checkpoint**: `make test` (backend, vide) et `pnpm test` (frontend, vide) passent ; `make migrate-up` est appelable.
 

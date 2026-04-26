@@ -1,0 +1,9 @@
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/local.hello-there.net.pem
+      keyFile: /etc/traefik/certs/local.hello-there.net-key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/local.hello-there.net.pem
+        keyFile: /etc/traefik/certs/local.hello-there.net-key.pem
