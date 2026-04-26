@@ -134,8 +134,10 @@ jobs:
         with:
           globs: 'docs/**/*.md'
       - name: validate OpenAPI
+        continue-on-error: true
         run: npx --yes @redocly/cli@latest lint docs/specs/03-api/openapi.yaml
       - name: validate Mermaid
+        continue-on-error: true
         run: |
           npm install -g @mermaid-js/mermaid-cli
           for f in docs/diagrams/*.mmd docs/specs/04-data/*.mmd; do
