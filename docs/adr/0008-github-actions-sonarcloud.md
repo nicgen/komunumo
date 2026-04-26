@@ -2,6 +2,7 @@
 
 - Statut : Accepté
 - Date : 2026-04-26
+- Révisé : 2026-04-26 (clarification sur le free tier SonarCloud, décision de rendre le repo public)
 - Décideur : nic
 
 ## Contexte
@@ -10,7 +11,11 @@ Le brief CDA exige une **pipeline CI/CD** automatisant tests et déploiement, et
 
 ## Décision
 
-Utiliser **GitHub Actions** pour l'orchestration CI/CD, et **SonarCloud** (gratuit pour public repos) pour l'analyse qualité. Pipeline minimum :
+Utiliser **GitHub Actions** pour l'orchestration CI/CD, et **SonarCloud** pour l'analyse qualité.
+
+**Décision sur la visibilité du dépôt** : SonarCloud est gratuit **uniquement pour les dépôts publics**. Le dépôt `nicgen/komunumo` est en conséquence **public**. Cela ne pose pas de problème de sécurité (aucun secret dans le code, gestion via 1Password + GitHub Secrets) et offre l'avantage supplémentaire de pouvoir être consulté par le jury en amont de la soutenance.
+
+Pipeline minimum :
 
 1. Lint frontend (Biome) + lint backend (`go vet`, `staticcheck`, `gosec`).
 2. Tests frontend (Vitest) + tests backend (`go test ./...`).

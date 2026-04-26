@@ -2,6 +2,7 @@
 
 - Statut : Accepté
 - Date : 2026-04-26
+- Révisé : 2026-04-26 (note ajoutée sur le footer Brevo en plan gratuit)
 - Décideur : nic
 
 ## Contexte
@@ -18,7 +19,7 @@ Volume estimé MVP : < 500 emails/mois. Délivrabilité critique (un email véri
 
 **Brevo** (anciennement Sendinblue, **société française**) via API HTTP transactionnelle.
 
-- Plan gratuit : 300 emails/jour (~9 000/mois), suffisant en MVP.
+- Plan gratuit : 300 emails/jour (~9 000/mois), suffisant en MVP. **Note** : le plan gratuit insère un footer "Sent via Brevo" sur les emails. Acceptable pour le MVP, suppressible en plan Lite (~25 €/mois) le jour où la marque doit être 100 % maîtrisée.
 - API : `POST https://api.brevo.com/v3/smtp/email`.
 - Authentification : clé API dans 1Password, injectée via `op run`.
 - Domaine d'envoi : `noreply@hello-there.net`, SPF/DKIM/DMARC configurés côté DNS Cloudflare.

@@ -7,7 +7,7 @@ Documentation technique et fonctionnelle du projet **AssoLink** (réseau social 
 - **AssoLink** = nom de projet (interne, dossier CDA, dépôt local, code).
 - **Komunumo** = nom de produit (interface utilisateur, branding, marketing). Esperanto pour "communauté", choix éditorial qui évoque l'universalité associative.
 - Dépôt distant : `git@github.com:nicgen/komunumo.git`.
-- URLs : `https://app.hello-there.net` (frontend Komunumo), `https://api.hello-there.net` (backend AssoLink).
+- URLs : `https://app.local.hello-there.net` (frontend Komunumo), `https://api.local.hello-there.net` (backend AssoLink).
 
 Les ADR, specs et le dossier emploient "AssoLink" pour parler du projet d'ingénierie. Les chaînes UI, balises `<title>`, méta OG, et copywriting marketing emploient "Komunumo".
 

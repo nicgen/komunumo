@@ -53,9 +53,9 @@ Offrir un outil **souverain, accessible et sobre** au tissu associatif et écono
 
 - **Délai** : MVP livré en 4 semaines + 1 semaine finition + 1 semaine soutenance.
 - **Équipe** : 1 développeur (assisté LLM).
-- **Stack imposée** : Go, gorilla/websocket, SQLite, Next.js, React, Tailwind.
+- **Stack imposée** : Go, coder/websocket, SQLite, Next.js, React, Tailwind.
 - **Conformité** : RGPD (article 20 portabilité), RGAA AAA parcours critiques, RGESN niveau "appliqué".
-- **Hébergement** : frontend Vercel (paris/francfort), backend VPS Traefik FR.
+- **Hébergement** : frontend Vercel (Paris/Francfort), backend Scaleway DEV1-S (Paris) pour la démo, Traefik local pour le dev.
 - **Budget** : 0 EUR de licences logicielles (open-source partout).
 
 ## Hors scope V1

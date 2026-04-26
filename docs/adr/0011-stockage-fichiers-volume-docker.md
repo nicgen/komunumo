@@ -2,19 +2,20 @@
 
 - Statut : Accepté
 - Date : 2026-04-26
+- Révisé : 2026-04-26 (clarification : pas de "serveur cible permanent", le volume vit sur la machine de dev en local et sur l'instance Scaleway DEV1-S pour la démo)
 - Décideur : nic
 
 ## Contexte
 
 L'application accepte des uploads utilisateurs limités au MVP : avatars (Personne, Association) et 1 image par post. Limite par fichier : 2 Mo en entrée, redimensionné serveur à 1280px max et converti AVIF (cf. `05-quality/eco.md`). Volume estimé sur 4 mois : < 5 Go pour 500 utilisateurs.
 
-Le serveur cible héberge déjà Traefik v2.11 et plusieurs services Docker dans `/home/nic/docker`. Aucun service S3-compatible n'y est actuellement déployé. Les solutions externes (Scaleway Object Storage, Cloudflare R2) ajoutent de la complexité (clés d'accès, SDK, signed URLs, facturation) pour un volume modeste au MVP.
+Le développeur n'a **pas de serveur permanent** : Traefik v2.11 + Docker tournent sur sa machine de développement (`/home/nic/docker`) pour l'environnement local. Pour la démo de soutenance, une instance **Scaleway DEV1-S** sera louée pour 1 mois (cf. ADR-0009). Aucun service S3-compatible n'est requis pour le volume MVP attendu. Les solutions externes (Scaleway Object Storage, Cloudflare R2) ajoutent de la complexité (clés d'accès, SDK, signed URLs, facturation) pour un volume modeste.
 
 ## Décision
 
 **Volume Docker nommé `komunumo_uploads` monté dans le conteneur backend Go**, exposé en lecture par Traefik via une route statique dédiée (`/uploads/*`).
 
-Configuration `docker-compose` (extrait) :
+Configuration `docker-compose` (extrait, identique en local et sur Scaleway, seul le `device` change) :
 ```yaml
 services:
   komunumo_api:
@@ -25,13 +26,15 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: /home/nic/docker/data/komunumo/uploads
+      # En dev:    /home/nic/docker/data/komunumo/uploads
+      # En démo:   /opt/komunumo/uploads (volume bloc Scaleway monté)
+      device: ${KOMUNUMO_UPLOADS_PATH}
       o: bind
 ```
 
 Convention de nommage des fichiers : `<entityType>/<entityId>/<fileId>.<ext>` (ex : `posts/01J9.../9d2a.avif`). Aucun nom utilisateur, donc pas d'IDOR par énumération.
 
-Sauvegarde : `restic` snapshot quotidien chiffré vers stockage externe (script existant à étendre, cf. SRE backlog).
+Sauvegarde : `restic` snapshot quotidien chiffré vers stockage externe (sur la VM Scaleway pendant la démo, dans le backlog post-soutenance pour automatisation).
 
 ## Alternatives écartées
 

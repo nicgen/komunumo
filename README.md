@@ -11,7 +11,7 @@ Projet de soutenance pour la certification française **CDA - Concepteur Dévelo
 
 | Couche | Choix |
 |--------|-------|
-| Backend | Go 1.24, hexagonal, gorilla/websocket, sqlc |
+| Backend | Go 1.24, hexagonal, coder/websocket, sqlc |
 | Persistance | SQLite WAL + FTS5, migrations golang-migrate |
 | Frontend | Next.js 16 (App Router, RSC), Tailwind v4, shadcn/ui |
 | Auth | Sessions cookies HttpOnly + bcrypt cost 12 |
@@ -42,9 +42,9 @@ cd frontend && pnpm install && pnpm dev
 
 ## URLs cibles
 
-- Production frontend : https://app.hello-there.net
-- Production backend : https://api.hello-there.net
-- WebSocket : wss://api.hello-there.net/v1/ws
+- Production frontend : https://app.local.hello-there.net
+- Production backend : https://api.local.hello-there.net
+- WebSocket : wss://api.local.hello-there.net/v1/ws
 
 ## Licence
 

@@ -1,6 +1,6 @@
 # ADR-0005 - gorilla/websocket avec hub en mémoire
 
-- Statut : Accepté
+- Statut : **Remplacé par [ADR-0014](./0014-coder-websocket-hub-memoire.md)** (gorilla/websocket n'est plus activement maintenu, bascule vers `coder/websocket`)
 - Date : 2026-04-26
 - Décideur : nic
 

@@ -19,7 +19,7 @@ sequenceDiagram
     A->>FA: Ouvre /messages
     FA->>API: GET /v1/ws/upgrade (cookie sid)
     API->>API: middleware RequireAuth -> account_id
-    API->>API: gorilla/websocket Upgrade
+    API->>API: coder/websocket Accept
     API->>H: Register(client{accountId, conn})
     H->>H: clients.Store(accountId, client)
     H-->>FA: 101 Switching Protocols
