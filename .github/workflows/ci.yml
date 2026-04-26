@@ -1,0 +1,198 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on new pushes to the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  # ------------------------------------------------------------------
+  # Detect what changed to skip irrelevant jobs (saves CO2 + minutes)
+  # ------------------------------------------------------------------
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'go.*'
+            frontend:
+              - 'frontend/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+            docs:
+              - 'docs/**'
+              - '*.md'
+
+  # ------------------------------------------------------------------
+  # Lint commit messages on PRs (Conventional Commits)
+  # ------------------------------------------------------------------
+  commitlint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v6
+
+  # ------------------------------------------------------------------
+  # Backend Go: lint, test, build, security scan
+  # ------------------------------------------------------------------
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: backend
+      - name: gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -fmt sarif -out gosec.sarif ./... || true
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+      - name: tests
+        run: go test -race -coverprofile=coverage.out ./...
+      - name: build
+        run: go build -o /tmp/komunumo-api ./cmd/server
+      - name: upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.out
+
+  # ------------------------------------------------------------------
+  # Frontend Next.js: lint, typecheck, test, build
+  # ------------------------------------------------------------------
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test --coverage
+      - run: pnpm build
+
+  # ------------------------------------------------------------------
+  # Docs: lint markdown, validate Mermaid + OpenAPI
+  # ------------------------------------------------------------------
+  docs:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v17
+        with:
+          globs: 'docs/**/*.md'
+      - name: validate OpenAPI
+        run: npx --yes @redocly/cli@latest lint docs/specs/03-api/openapi.yaml
+      - name: validate Mermaid
+        run: |
+          npm install -g @mermaid-js/mermaid-cli
+          for f in docs/diagrams/*.mmd docs/specs/04-data/*.mmd; do
+            mmdc -i "$f" -o /tmp/$(basename "$f" .mmd).svg
+          done
+
+  # ------------------------------------------------------------------
+  # Container scan (only when Dockerfiles touched)
+  # ------------------------------------------------------------------
+  trivy:
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: trivy fs scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          ignore-unfixed: true
+
+  # ------------------------------------------------------------------
+  # SonarCloud (Quality Gate)
+  # ------------------------------------------------------------------
+  sonar:
+    needs: [backend, frontend]
+    if: always() && github.event_name != 'merge_group'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/
+        continue-on-error: true
+      - uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ------------------------------------------------------------------
+  # Quality gate: all required jobs must pass
+  # ------------------------------------------------------------------
+  ci-success:
+    needs: [backend, frontend, docs]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix results
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ]; then
+            echo "One or more required checks failed."
+            exit 1
+          fi
+          echo "All required checks passed."

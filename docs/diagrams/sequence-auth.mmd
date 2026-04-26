@@ -1,0 +1,103 @@
+%% Diagramme de séquence UML - Authentification AssoLink
+%% Couvre : inscription, vérification email, login, logout
+%% Parcours critique RGAA AAA
+
+sequenceDiagram
+    autonumber
+    actor U as Utilisateur
+    participant B as Browser (Next.js)
+    participant P as proxy.ts (Edge)
+    participant A as API Go (Traefik)
+    participant H as AuthService
+    participant DB as SQLite
+    participant M as Mailer (Brevo)
+    participant L as AuditLogger
+
+    %% --- Inscription ---
+    rect rgb(240, 248, 255)
+    Note over U,L: Inscription Personne (UC1)
+    U->>B: POST /inscription (email, password, kind=member)
+    B->>P: fetch /api/auth/register
+    P->>A: POST /v1/auth/register (cookie csrf check)
+    A->>H: Register(input)
+    H->>H: validate(email, password ≥ 12)
+    H->>DB: SELECT id FROM accounts WHERE email=?
+    DB-->>H: not found
+    H->>H: bcrypt.GenerateFromPassword(cost=12)
+    H->>DB: INSERT INTO accounts (id, email, password_hash, status=pending)
+    H->>DB: INSERT INTO email_verifications (token, account_id, expires_at)
+    H->>L: Append(actor=null, action=account.register)
+    H->>M: SendVerificationEmail(email, token)
+    M-->>H: 202 Accepted
+    H-->>A: Account{status=pending}
+    A-->>P: 201 Created
+    P-->>B: 201 + Set-Cookie csrf
+    B-->>U: Page "Vérifie ta boite mail"
+    end
+
+    %% --- Vérification email ---
+    rect rgb(245, 255, 245)
+    Note over U,L: Vérification email (UC4)
+    U->>B: Clic lien email /verify?token=xxx
+    B->>A: GET /v1/auth/verify?token=xxx
+    A->>H: VerifyEmail(token)
+    H->>DB: SELECT * FROM email_verifications WHERE token=? AND expires_at>now AND consumed_at IS NULL
+    DB-->>H: row
+    H->>DB: UPDATE accounts SET status='active' WHERE id=?
+    H->>DB: UPDATE email_verifications SET consumed_at=now
+    H->>L: Append(actor=account_id, action=account.verified)
+    H-->>A: ok
+    A-->>B: 302 /connexion
+    end
+
+    %% --- Login ---
+    rect rgb(255, 250, 240)
+    Note over U,L: Connexion (UC3)
+    U->>B: POST /connexion (email, password)
+    B->>A: POST /v1/auth/login
+    A->>H: Login(email, password)
+    H->>DB: SELECT id, password_hash, status FROM accounts WHERE email=?
+    DB-->>H: account
+    H->>H: bcrypt.CompareHashAndPassword
+    alt mauvais mdp
+        H->>DB: INSERT INTO login_failures (account_id, ip_hash)
+        H->>L: Append(action=login.failed)
+        H-->>A: ErrInvalidCredentials
+        A-->>B: 401 Unauthorized (réponse uniforme)
+    else mdp ok et status=active
+        H->>H: random 32 bytes -> session_id
+        H->>DB: INSERT INTO sessions (id, account_id, ip_hash, expires_at)
+        H->>L: Append(action=login.ok)
+        H-->>A: Session
+        A-->>B: 200 + Set-Cookie sid (HttpOnly,Secure,SameSite=Lax,Max-Age=30j)
+    end
+    B-->>U: Redirection /feed
+    end
+
+    %% --- Requête authentifiée ---
+    rect rgb(250, 245, 255)
+    Note over U,L: Requête authentifiée
+    U->>B: Action quelconque
+    B->>P: fetch avec cookie sid
+    P->>P: lecture cookie sid (pas de validation, juste forward)
+    P->>A: requête + cookie sid
+    A->>H: middleware RequireAuth
+    H->>DB: SELECT account_id FROM sessions WHERE id=? AND expires_at>now
+    DB-->>H: account_id
+    H-->>A: ctx.WithAccount(account_id)
+    A-->>P: 200 OK
+    P-->>B: réponse
+    end
+
+    %% --- Logout ---
+    rect rgb(255, 245, 245)
+    Note over U,L: Déconnexion
+    U->>B: Clic "Se déconnecter"
+    B->>A: POST /v1/auth/logout
+    A->>H: Logout(sid)
+    H->>DB: DELETE FROM sessions WHERE id=?
+    H->>L: Append(action=logout)
+    H-->>A: ok
+    A-->>B: 204 + Set-Cookie sid="" Max-Age=0
+    B-->>U: Redirection /
+    end

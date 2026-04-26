@@ -1,0 +1,86 @@
+%% Diagramme de séquence UML - Chat temps réel WebSocket AssoLink
+%% Couvre : connexion WS, envoi message, broadcast, persistance, notification
+
+sequenceDiagram
+    autonumber
+    actor A as Alice
+    actor B as Bob
+    participant FA as Browser Alice
+    participant FB as Browser Bob
+    participant API as API Go (HTTP)
+    participant H as ChatHub (sync.Map)
+    participant DB as SQLite
+    participant N as NotificationService
+    participant L as AuditLogger
+
+    %% --- Connexion WS ---
+    rect rgb(240, 248, 255)
+    Note over A,L: Connexion WebSocket (les 2 clients)
+    A->>FA: Ouvre /messages
+    FA->>API: GET /v1/ws/upgrade (cookie sid)
+    API->>API: middleware RequireAuth -> account_id
+    API->>API: gorilla/websocket Upgrade
+    API->>H: Register(client{accountId, conn})
+    H->>H: clients.Store(accountId, client)
+    H-->>FA: 101 Switching Protocols
+    FA->>H: heartbeat ping/pong toutes 30s
+
+    B->>FB: Ouvre /messages
+    FB->>API: GET /v1/ws/upgrade
+    API->>H: Register(client B)
+    H-->>FB: 101 Switching Protocols
+    end
+
+    %% --- Envoi message ---
+    rect rgb(245, 255, 245)
+    Note over A,L: Alice envoie un message à Bob
+    A->>FA: Tape message + Enter
+    FA->>H: WS frame {type:"chat.send", convId, content}
+    H->>H: rate limit check (60 msg/min/compte)
+    H->>DB: SELECT participants FROM conversation_members WHERE conv_id=?
+    DB-->>H: [alice, bob]
+    H->>DB: INSERT INTO messages (id, conv_id, sender_id, content, created_at)
+    DB-->>H: msg{id, createdAt}
+    H->>L: Append(action=message.sent) (async, non bloquant)
+    end
+
+    %% --- Broadcast ---
+    rect rgb(255, 250, 240)
+    Note over A,L: Diffusion aux destinataires connectés
+    par envoi à Alice (echo)
+        H->>FA: WS frame {type:"chat.message", id, convId, senderId, content}
+        FA->>A: Affiche message envoyé
+    and envoi à Bob (en ligne)
+        H->>FB: WS frame {type:"chat.message", ...}
+        FB->>B: Bulle apparait + son optionnel
+    end
+    end
+
+    %% --- Notification si destinataire offline ---
+    rect rgb(250, 245, 255)
+    Note over A,L: Cas Bob hors-ligne (alternative)
+    alt Bob disconnecté
+        H->>N: Push(recipient=bob, kind=msg.received, payload)
+        N->>N: aggregator: si msg.received déjà <5min -> increment count
+        N->>DB: INSERT/UPDATE notifications
+        N->>N: schedule email digest (1/h max par compte)
+    end
+    end
+
+    %% --- Indicateur saisie ---
+    rect rgb(255, 245, 245)
+    Note over A,L: Indicateur "en train d'écrire"
+    A->>FA: tape lettre
+    FA->>H: WS frame {type:"chat.typing", convId} (debounce 500ms)
+    H->>FB: WS frame {type:"chat.typing", convId, accountId=alice}
+    FB->>B: "Alice écrit..."
+    end
+
+    %% --- Déconnexion ---
+    rect rgb(245, 245, 245)
+    Note over A,L: Fermeture
+    A->>FA: Ferme onglet
+    FA->>H: WS close frame
+    H->>H: clients.Delete(alice)
+    H->>H: presence.set offline + broadcast aux abonnés
+    end

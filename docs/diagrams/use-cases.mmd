@@ -1,0 +1,103 @@
+%% Diagramme de cas d'usage UML - AssoLink
+%% Notation : flowchart Mermaid (rendu graphique acceptable, exporté en SVG via mermaid-cli)
+
+flowchart LR
+    %% Acteurs
+    Visitor((Visiteur))
+    Member((Personne))
+    AsoOwner((Asso - Owner))
+    AsoAdmin((Asso - Admin))
+    AsoMember((Asso - Membre))
+    Mod((Modérateur))
+    System((Système))
+
+    %% Périmètre
+    subgraph AssoLink
+        UC1[S'inscrire Personne]
+        UC2[S'inscrire Association]
+        UC3[Se connecter]
+        UC4[Vérifier email]
+        UC5[Réinitialiser mot de passe]
+        UC6[Modifier profil]
+        UC7[Suivre / ne plus suivre]
+        UC8[Accepter / refuser demande]
+        UC9[Publier post]
+        UC10[Commenter post]
+        UC11[Lire feed]
+        UC12[Rechercher contenu]
+        UC13[Inviter dans asso]
+        UC14[Rejoindre asso sur invitation]
+        UC15[Demander à rejoindre asso]
+        UC16[Créer événement]
+        UC17[Répondre à événement]
+        UC18[Envoyer message direct]
+        UC19[Envoyer message canal asso]
+        UC20[Recevoir notifications]
+        UC21[Configurer accessibilité]
+        UC22[Activer mode sobriété]
+        UC23[Exporter mes données RGPD]
+        UC24[Supprimer mon compte]
+        UC25[Modérer contenu asso]
+        UC26[Consulter audit log]
+        UC27[Agréger notifications]
+        UC28[Envoyer email transactionnel]
+        UC29[Tracer action sensible HMAC]
+    end
+
+    Visitor --> UC1
+    Visitor --> UC2
+    Visitor --> UC3
+    Visitor --> UC4
+    Visitor --> UC5
+
+    Member --> UC6
+    Member --> UC7
+    Member --> UC8
+    Member --> UC9
+    Member --> UC10
+    Member --> UC11
+    Member --> UC12
+    Member --> UC14
+    Member --> UC15
+    Member --> UC17
+    Member --> UC18
+    Member --> UC20
+    Member --> UC21
+    Member --> UC22
+    Member --> UC23
+    Member --> UC24
+
+    AsoOwner --> UC9
+    AsoOwner --> UC13
+    AsoOwner --> UC16
+    AsoOwner --> UC19
+    AsoOwner --> UC25
+    AsoOwner --> UC26
+    AsoOwner --> UC24
+
+    AsoAdmin --> UC9
+    AsoAdmin --> UC13
+    AsoAdmin --> UC16
+    AsoAdmin --> UC19
+    AsoAdmin --> UC25
+    AsoAdmin --> UC26
+
+    AsoMember --> UC10
+    AsoMember --> UC17
+    AsoMember --> UC19
+
+    Mod --> UC25
+
+    System --> UC27
+    System --> UC28
+    System --> UC29
+
+    %% Inclusions / extensions implicites par convention
+    UC1 -.includes.-> UC4
+    UC2 -.includes.-> UC4
+    UC9 -.triggers.-> UC29
+    UC23 -.triggers.-> UC29
+    UC24 -.triggers.-> UC29
+    UC25 -.triggers.-> UC29
+    UC18 -.notifies via.-> UC20
+    UC20 -.optimized by.-> UC27

@@ -1,0 +1,491 @@
+openapi: 3.1.0
+info:
+  title: AssoLink API
+  version: 0.1.0
+  description: |
+    REST API d'AssoLink. Sécurité par session cookie HttpOnly + CSRF token.
+    Voir ADR-0004 pour la stratégie d'authentification.
+  contact:
+    name: nic
+  license:
+    name: AGPL-3.0
+
+servers:
+  - url: https://api.hello-there.net/v1
+    description: Production
+  - url: https://staging-api.hello-there.net/v1
+    description: Staging
+  - url: http://localhost:8080/v1
+    description: Dev local
+
+tags:
+  - name: auth
+  - name: accounts
+  - name: posts
+  - name: follows
+  - name: groups
+  - name: events
+  - name: chat
+  - name: notifications
+  - name: search
+  - name: rgpd
+
+paths:
+  /auth/register/member:
+    post:
+      tags: [auth]
+      summary: Inscrire une Personne
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterMember' }
+      responses:
+        '201': { description: Compte créé en pending_verification }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/register/association:
+    post:
+      tags: [auth]
+      summary: Inscrire une Association
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterAssociation' }
+      responses:
+        '201': { description: Compte créé en pending_verification }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Connexion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '200':
+          description: Connexion OK, cookie session_id posé
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { description: Credentials invalides }
+        '403': { description: Compte non vérifié }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      security: [{ sessionCookie: [] }]
+      summary: Déconnexion
+      responses:
+        '204': { description: Session invalidée }
+
+  /auth/me:
+    get:
+      tags: [auth]
+      security: [{ sessionCookie: [] }]
+      summary: Compte courant
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+
+  /auth/password-reset/request:
+    post:
+      tags: [auth]
+      summary: Demande de réinitialisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: OK (même réponse si l'email n'existe pas) }
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [auth]
+      summary: Réinitialiser le mot de passe via token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, new_password]
+              properties:
+                token: { type: string }
+                new_password: { type: string, minLength: 12 }
+      responses:
+        '204': { description: OK }
+        '400': { description: Token invalide ou expiré }
+
+  /accounts/{id}:
+    get:
+      tags: [accounts]
+      summary: Profil public d'un compte
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountPublic' }
+        '404': { description: Inconnu ou privé non autorisé }
+
+  /posts:
+    get:
+      tags: [posts]
+      security: [{ sessionCookie: [] }]
+      summary: Feed (chronologique, plafonné cf. F5)
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 50 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PostPage' }
+    post:
+      tags: [posts]
+      security: [{ sessionCookie: [] }]
+      summary: Créer un post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostCreate' }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
+  /posts/{id}:
+    get:
+      tags: [posts]
+      summary: Lire un post
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '403': { description: Visibilité restreinte }
+        '404': { description: Inconnu ou supprimé }
+    delete:
+      tags: [posts]
+      security: [{ sessionCookie: [] }]
+      summary: Supprimer un post (auteur uniquement)
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      responses:
+        '204': { description: Supprimé }
+        '403': { description: Pas l'auteur }
+
+  /follows:
+    post:
+      tags: [follows]
+      security: [{ sessionCookie: [] }]
+      summary: Demander à suivre un compte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_id]
+              properties:
+                target_id: { type: string }
+      responses:
+        '202': { description: Demande envoyée (pending) ou acceptée auto si compte public }
+
+  /follows/{id}:
+    delete:
+      tags: [follows]
+      security: [{ sessionCookie: [] }]
+      summary: Ne plus suivre / annuler demande
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      responses:
+        '204': { description: OK }
+
+  /associations/{id}/members:
+    get:
+      tags: [groups]
+      summary: Membres d'une association
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Membership' }
+
+  /associations/{id}/invite:
+    post:
+      tags: [groups]
+      security: [{ sessionCookie: [] }]
+      summary: Inviter une Personne dans l'association (owner/admin)
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [member_account_id]
+              properties:
+                member_account_id: { type: string }
+      responses:
+        '202': { description: Invitation envoyée }
+
+  /events:
+    post:
+      tags: [events]
+      security: [{ sessionCookie: [] }]
+      summary: Créer un événement (association)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventCreate' }
+      responses:
+        '201': { description: Créé }
+
+  /events/{id}/rsvp:
+    post:
+      tags: [events]
+      security: [{ sessionCookie: [] }]
+      summary: Répondre à un événement
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [response]
+              properties:
+                response: { type: string, enum: [going, not_going, maybe] }
+      responses:
+        '204': { description: OK }
+
+  /search:
+    get:
+      tags: [search]
+      summary: Recherche unifiée (FTS5) - cf. F3
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2 }
+        - in: query
+          name: type
+          schema: { type: string, enum: [all, post, account, group] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SearchResults' }
+
+  /notifications:
+    get:
+      tags: [notifications]
+      security: [{ sessionCookie: [] }]
+      summary: Notifications (avec agrégation F2)
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Notification' }
+
+  /notifications/{id}/read:
+    post:
+      tags: [notifications]
+      security: [{ sessionCookie: [] }]
+      summary: Marquer comme lue
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      responses:
+        '204': { description: OK }
+
+  /rgpd/export:
+    post:
+      tags: [rgpd]
+      security: [{ sessionCookie: [] }]
+      summary: Exporter mes données (article 20) - F9
+      responses:
+        '202':
+          description: Export en cours de génération
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  export_id: { type: string }
+
+  /rgpd/export/{id}:
+    get:
+      tags: [rgpd]
+      security: [{ sessionCookie: [] }]
+      summary: Télécharger l'export (ZIP contenant JSON + PDF)
+      parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
+      responses:
+        '200':
+          content:
+            application/zip: {}
+        '202': { description: Pas encore prêt }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+
+  responses:
+    ValidationError:
+      description: Validation d'entrée échouée
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              fields:
+                type: object
+                additionalProperties: { type: string }
+    RateLimited:
+      description: Trop de requêtes
+      headers:
+        Retry-After:
+          schema: { type: integer }
+
+  schemas:
+    RegisterMember:
+      type: object
+      required: [email, password, first_name, last_name, birth_date, accept_tos]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12 }
+        first_name: { type: string }
+        last_name: { type: string }
+        birth_date: { type: string, format: date }
+        nickname: { type: string }
+        accept_tos: { type: boolean }
+    RegisterAssociation:
+      type: object
+      required: [email, password, legal_name, postal_code, accept_tos]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12 }
+        legal_name: { type: string }
+        siren: { type: string }
+        rna: { type: string }
+        postal_code: { type: string }
+        accept_tos: { type: boolean }
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    Account:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [member, association] }
+        email: { type: string }
+        status: { type: string }
+    AccountPublic:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        display_name: { type: string }
+        avatar_url: { type: string }
+        about: { type: string }
+        followers_count: { type: integer }
+        following_count: { type: integer }
+    Post:
+      type: object
+      properties:
+        id: { type: string }
+        author: { $ref: '#/components/schemas/AccountPublic' }
+        content: { type: string }
+        visibility: { type: string }
+        media_url: { type: string }
+        media_alt: { type: string }
+        created_at: { type: string, format: date-time }
+    PostCreate:
+      type: object
+      required: [content, visibility]
+      properties:
+        content: { type: string, maxLength: 5000 }
+        visibility: { type: string, enum: [public, followers, members, private] }
+        private_viewer_ids:
+          type: array
+          items: { type: string }
+        media_alt: { type: string }
+    PostPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Post' }
+        next_cursor: { type: string }
+    Membership:
+      type: object
+      properties:
+        id: { type: string }
+        member: { $ref: '#/components/schemas/AccountPublic' }
+        role: { type: string, enum: [owner, admin, member] }
+        status: { type: string }
+        joined_at: { type: string, format: date-time }
+    EventCreate:
+      type: object
+      required: [association_id, title, starts_at]
+      properties:
+        association_id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        postal_code: { type: string }
+        capacity: { type: integer }
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        payload: { type: object }
+        aggregate_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        read_at: { type: string, format: date-time, nullable: true }
+    SearchResults:
+      type: object
+      properties:
+        posts:
+          type: array
+          items: { $ref: '#/components/schemas/Post' }
+        accounts:
+          type: array
+          items: { $ref: '#/components/schemas/AccountPublic' }

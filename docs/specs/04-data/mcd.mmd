@@ -1,0 +1,209 @@
+%% Modèle Conceptuel de Données - AssoLink
+%% Notation Mermaid erDiagram (équivalent IE simplifiée)
+%% Cardinalités : ||--|| 1-1, ||--o{ 1-N, }o--o{ N-N
+
+erDiagram
+    ACCOUNT {
+        uuid id PK
+        string email UK
+        string password_hash
+        string status "pending_verification|active|suspended|deleted"
+        string kind "member|association"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    MEMBER {
+        uuid account_id PK_FK
+        string first_name
+        string last_name
+        date birth_date
+        string nickname
+        string about_me
+        string avatar_path
+        string visibility "public|private"
+    }
+
+    ASSOCIATION {
+        uuid account_id PK_FK
+        string legal_name
+        string siren
+        string rna
+        string postal_code
+        string about
+        string logo_path
+        string visibility "public|private"
+    }
+
+    MEMBERSHIP {
+        uuid id PK
+        uuid member_account_id FK
+        uuid association_account_id FK
+        string role "owner|admin|member"
+        string status "pending|active|left"
+        datetime joined_at
+    }
+
+    FOLLOW {
+        uuid id PK
+        uuid follower_account_id FK
+        uuid target_account_id FK
+        string status "pending|accepted|declined"
+        datetime created_at
+    }
+
+    POST {
+        uuid id PK
+        uuid author_account_id FK
+        string content "max 5000 chars"
+        string visibility "public|followers|members|private"
+        string media_path
+        string media_alt
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    POST_PRIVATE_VIEWER {
+        uuid post_id FK
+        uuid viewer_account_id FK
+    }
+
+    COMMENT {
+        uuid id PK
+        uuid post_id FK
+        uuid author_account_id FK
+        string content
+        datetime created_at
+        datetime deleted_at
+    }
+
+    EVENT {
+        uuid id PK
+        uuid association_account_id FK
+        string title
+        string description
+        datetime starts_at
+        datetime ends_at
+        string postal_code
+        int capacity
+        datetime created_at
+    }
+
+    EVENT_RSVP {
+        uuid event_id FK
+        uuid account_id FK
+        string response "going|not_going|maybe"
+        datetime answered_at
+    }
+
+    CONVERSATION {
+        uuid id PK
+        string kind "direct|group_channel"
+        uuid association_account_id FK "nullable, set if group_channel"
+        string name "for channels"
+        datetime created_at
+    }
+
+    CONVERSATION_PARTICIPANT {
+        uuid conversation_id FK
+        uuid account_id FK
+        datetime joined_at
+        datetime last_read_at
+    }
+
+    MESSAGE {
+        uuid id PK
+        uuid conversation_id FK
+        uuid sender_account_id FK
+        string content
+        datetime created_at
+        datetime deleted_at
+    }
+
+    NOTIFICATION {
+        uuid id PK
+        uuid recipient_account_id FK
+        string kind "follow_request|group_invite|event_created|post_liked|..."
+        string payload_json
+        datetime created_at
+        datetime delivered_at
+        datetime read_at
+        int aggregate_count "F2 - count of similar events bundled"
+    }
+
+    SESSION {
+        string id PK
+        uuid account_id FK
+        string ip_hash
+        string user_agent
+        datetime created_at
+        datetime expires_at
+        datetime revoked_at
+    }
+
+    AUDIT_LOG {
+        bigint id PK
+        uuid actor_account_id FK
+        string action
+        string target_type
+        string target_id
+        string payload_json
+        bytes prev_hash
+        bytes hash "HMAC-SHA256 chained"
+        datetime at
+    }
+
+    EMAIL_VERIFICATION {
+        uuid id PK
+        uuid account_id FK
+        string token_hash
+        datetime expires_at
+        datetime consumed_at
+    }
+
+    PASSWORD_RESET {
+        uuid id PK
+        uuid account_id FK
+        string token_hash
+        datetime expires_at
+        datetime consumed_at
+    }
+
+    USER_PREFERENCES {
+        uuid account_id PK_FK
+        string theme "light|dark|auto"
+        string font_size "sm|md|lg"
+        string spacing "compact|normal|loose"
+        bool reduce_motion
+        bool high_contrast
+        bool sober_mode "F-eco - text-only"
+    }
+
+    ACCOUNT ||--o| MEMBER : "is_a"
+    ACCOUNT ||--o| ASSOCIATION : "is_a"
+    ACCOUNT ||--o{ MEMBERSHIP : "member_link"
+    ACCOUNT ||--o{ MEMBERSHIP : "asso_link"
+    ACCOUNT ||--o{ FOLLOW : "follower"
+    ACCOUNT ||--o{ FOLLOW : "target"
+    ACCOUNT ||--o{ POST : "authors"
+    ACCOUNT ||--o{ COMMENT : "writes"
+    ACCOUNT ||--o{ EVENT_RSVP : "responds"
+    ACCOUNT ||--o{ CONVERSATION_PARTICIPANT : "participates"
+    ACCOUNT ||--o{ MESSAGE : "sends"
+    ACCOUNT ||--o{ NOTIFICATION : "receives"
+    ACCOUNT ||--o{ SESSION : "owns"
+    ACCOUNT ||--o{ AUDIT_LOG : "performs"
+    ACCOUNT ||--|| USER_PREFERENCES : "configures"
+
+    ASSOCIATION ||--o{ EVENT : "organizes"
+    ASSOCIATION ||--o{ CONVERSATION : "hosts_channel"
+
+    POST ||--o{ COMMENT : "has"
+    POST ||--o{ POST_PRIVATE_VIEWER : "private_to"
+
+    EVENT ||--o{ EVENT_RSVP : "receives"
+
+    CONVERSATION ||--o{ CONVERSATION_PARTICIPANT : "has"
+    CONVERSATION ||--o{ MESSAGE : "contains"

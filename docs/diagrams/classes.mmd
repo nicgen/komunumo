@@ -1,0 +1,221 @@
+%% Diagramme de classes UML - AssoLink (couche domaine Go)
+%% Reflète les entités et services de internal/domain et internal/application
+
+classDiagram
+    class Account {
+        +UUID id
+        +Email email
+        +PasswordHash passwordHash
+        +AccountStatus status
+        +AccountKind kind
+        +Time createdAt
+        +Time updatedAt
+        +verifyPassword(plain string) bool
+        +rotatePassword(plain string) error
+    }
+
+    class Member {
+        +UUID accountId
+        +string firstName
+        +string lastName
+        +Date birthDate
+        +string nickname
+        +string aboutMe
+        +Visibility visibility
+        +displayName() string
+    }
+
+    class Association {
+        +UUID accountId
+        +string legalName
+        +string siren
+        +string rna
+        +string postalCode
+        +string about
+        +Visibility visibility
+    }
+
+    class Membership {
+        +UUID id
+        +UUID memberId
+        +UUID associationId
+        +Role role
+        +MembershipStatus status
+        +Time joinedAt
+        +canManage() bool
+    }
+
+    class Follow {
+        +UUID id
+        +UUID followerId
+        +UUID targetId
+        +FollowStatus status
+        +Time createdAt
+        +accept() error
+        +decline() error
+    }
+
+    class Post {
+        +UUID id
+        +UUID authorId
+        +string content
+        +PostVisibility visibility
+        +string mediaPath
+        +string mediaAlt
+        +Time createdAt
+        +canBeViewedBy(viewerId UUID) bool
+    }
+
+    class Comment {
+        +UUID id
+        +UUID postId
+        +UUID authorId
+        +string content
+        +Time createdAt
+    }
+
+    class Event {
+        +UUID id
+        +UUID associationId
+        +string title
+        +string description
+        +Time startsAt
+        +Time endsAt
+        +string postalCode
+        +int capacity
+        +isFull(rsvpCount int) bool
+    }
+
+    class EventRSVP {
+        +UUID eventId
+        +UUID accountId
+        +RSVPResponse response
+        +Time answeredAt
+    }
+
+    class Conversation {
+        +UUID id
+        +ConversationKind kind
+        +UUID associationId
+        +string name
+        +addParticipant(id UUID) error
+        +canSend(senderId UUID) bool
+    }
+
+    class Message {
+        +UUID id
+        +UUID conversationId
+        +UUID senderId
+        +string content
+        +Time createdAt
+    }
+
+    class Notification {
+        +UUID id
+        +UUID recipientId
+        +NotifKind kind
+        +string payloadJSON
+        +int aggregateCount
+        +Time createdAt
+        +Time readAt
+        +markRead()
+    }
+
+    class Session {
+        +string id
+        +UUID accountId
+        +string ipHash
+        +Time createdAt
+        +Time expiresAt
+        +isExpired() bool
+        +revoke()
+    }
+
+    class AuditLog {
+        +int64 id
+        +UUID actorId
+        +string action
+        +string targetType
+        +string targetId
+        +bytes prevHash
+        +bytes hash
+        +Time at
+        +verifyChain(prev AuditLog) bool
+    }
+
+    %% Application services (use cases)
+    class AuthService {
+        -accounts AccountRepo
+        -sessions SessionRepo
+        -hasher PasswordHasher
+        -mailer Mailer
+        -audit AuditLogger
+        +Register(in RegisterInput) (Account, error)
+        +Login(email, pwd string) (Session, error)
+        +Logout(sid string) error
+        +ResetRequest(email string) error
+        +ResetConfirm(token, newPwd string) error
+    }
+
+    class PostService {
+        -posts PostRepo
+        -accounts AccountRepo
+        -follows FollowRepo
+        -bus EventBus
+        +Create(authorId UUID, in PostInput) (Post, error)
+        +Delete(actorId, postId UUID) error
+        +ListFeed(viewerId UUID, cursor string) ([]Post, error)
+    }
+
+    class ChatHub {
+        -clients map~UUID~Client
+        -rooms map~UUID~Room
+        -bus EventBus
+        +Register(c Client)
+        +Unregister(c Client)
+        +Send(conv UUID, msg Message) error
+    }
+
+    class NotificationService {
+        -notifs NotifRepo
+        -aggregator Aggregator
+        -bus EventBus
+        +Push(recipient UUID, kind NotifKind, payload any)
+        +ListUnread(account UUID) []Notification
+    }
+
+    class AuditLogger {
+        -repo AuditRepo
+        -secret HMACSecret
+        +Append(actor UUID, action, ttype, tid string, payload any) error
+        +VerifyChain() error
+    }
+
+    %% Relations
+    Account "1" -- "0..1" Member : profile
+    Account "1" -- "0..1" Association : profile
+    Account "1" -- "*" Membership : member_of
+    Association "1" -- "*" Membership : has_members
+    Account "1" -- "*" Follow : following
+    Account "1" -- "*" Follow : followers
+    Account "1" -- "*" Post : authors
+    Post "1" -- "*" Comment
+    Post "*" -- "*" Account : private_viewers
+    Association "1" -- "*" Event
+    Event "1" -- "*" EventRSVP
+    Account "*" -- "*" EventRSVP
+    Conversation "1" -- "*" Message
+    Account "*" -- "*" Conversation : participates
+    Account "1" -- "*" Notification : receives
+    Account "1" -- "*" Session
+    Account "1" -- "*" AuditLog : performs
+
+    AuthService ..> Account
+    AuthService ..> Session
+    AuthService ..> AuditLogger
+    PostService ..> Post
+    PostService ..> Follow
+    ChatHub ..> Conversation
+    ChatHub ..> Message
+    NotificationService ..> Notification
+    AuditLogger ..> AuditLog
