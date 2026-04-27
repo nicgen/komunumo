@@ -9,7 +9,7 @@ INSERT OR IGNORE INTO accounts (
     'seed-acc-001',
     'anne@example.com',
     'anne@example.com',
-    '$2a$12$LQv3c1yqBwEHxPvonEe9XOIr9H1.H3QZY4kW.8.ZhQj2RFxMDpXiS',
+    '$2a$12$s7aSGQxOW4bgV45m7BW8Lun0vrV/V.7eSV9Ttf06L6.AXcPgWXcMi',
     'verified',
     'Anne',
     'Dupont',
