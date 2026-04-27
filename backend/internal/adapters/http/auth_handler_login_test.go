@@ -34,7 +34,7 @@ func newLoginHandler(t *testing.T) (*httpadapter.AuthHandler, *fakes.AccountRepo
 	loginSvc := auth.NewLoginService(accounts, sessions, auditLog, hasher, tokenGen, clk, rl, uow)
 	logoutSvc := auth.NewLogoutService(sessions, auditLog, tokenGen, clk)
 
-	handler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc)
+	handler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc, nil, nil)
 	return handler, accounts, sessions
 }
 

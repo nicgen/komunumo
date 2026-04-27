@@ -33,7 +33,7 @@ func newRegisterHandler(t *testing.T) (*httpadapter.AuthHandler, *fakes.AccountR
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditLog, tokenGen, clk, uow)
 	resendSvc := auth.NewResendVerificationService(accounts, tokens, auditLog, emails, tokenGen, clk, rl, uow)
 
-	handler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, nil, nil)
+	handler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, nil, nil, nil, nil)
 	return handler, accounts, emails
 }
 

@@ -23,8 +23,8 @@ func NewRouter(auth *AuthHandler) http.Handler {
 		r.Post("/login", auth.Login)
 		r.Post("/logout", auth.Logout)
 		r.Get("/me", notImpl)
-		r.Post("/password-reset/request", notImpl)
-		r.Post("/password-reset/confirm", notImpl)
+		r.Post("/password-reset/request", auth.PasswordResetRequest)
+		r.Post("/password-reset/confirm", auth.PasswordResetConfirm)
 	})
 
 	// Protected routes (Phase 4+) will go here with r.Use(middleware.CSRF).

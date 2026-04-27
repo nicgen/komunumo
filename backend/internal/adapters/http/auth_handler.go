@@ -17,11 +17,13 @@ const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 // AuthHandler wires application services to HTTP.
 // Nil services indicate features not yet wired (returns 501).
 type AuthHandler struct {
-	register *auth.RegisterService
-	verify   *auth.VerifyEmailService
-	resend   *auth.ResendVerificationService
-	login    *auth.LoginService
-	logout   *auth.LogoutService
+	register       *auth.RegisterService
+	verify         *auth.VerifyEmailService
+	resend         *auth.ResendVerificationService
+	login          *auth.LoginService
+	logout         *auth.LogoutService
+	pwResetRequest *auth.PasswordResetRequestService
+	pwResetConfirm *auth.PasswordResetConfirmService
 }
 
 func NewAuthHandler(
@@ -30,8 +32,14 @@ func NewAuthHandler(
 	resend *auth.ResendVerificationService,
 	login *auth.LoginService,
 	logout *auth.LogoutService,
+	pwResetRequest *auth.PasswordResetRequestService,
+	pwResetConfirm *auth.PasswordResetConfirmService,
 ) *AuthHandler {
-	return &AuthHandler{register: register, verify: verify, resend: resend, login: login, logout: logout}
+	return &AuthHandler{
+		register: register, verify: verify, resend: resend,
+		login: login, logout: logout,
+		pwResetRequest: pwResetRequest, pwResetConfirm: pwResetConfirm,
+	}
 }
 
 // --- Register ---
@@ -339,6 +347,129 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
+// --- PasswordResetRequest ---
+
+func (h *AuthHandler) PasswordResetRequest(w http.ResponseWriter, r *http.Request) {
+	if h.pwResetRequest == nil {
+		http.Error(w, "not implemented", http.StatusNotImplemented)
+		return
+	}
+
+	var email string
+	isJSON := isJSONRequest(r)
+
+	if isJSON {
+		var req struct {
+			Email string `json:"email"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonError(w, "invalid JSON", http.StatusBadRequest)
+			return
+		}
+		email = req.Email
+	} else {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad form", http.StatusBadRequest)
+			return
+		}
+		email = r.FormValue("email")
+	}
+
+	err := h.pwResetRequest.Request(r.Context(), auth.PasswordResetRequestInput{
+		Email: email,
+		IP:    clientIP(r),
+	})
+	if err != nil {
+		if errors.Is(err, auth.ErrRateLimited) {
+			if isJSON {
+				jsonError(w, "trop de tentatives", http.StatusTooManyRequests)
+			} else {
+				http.Error(w, "trop de tentatives", http.StatusTooManyRequests)
+			}
+			return
+		}
+		if isJSON {
+			jsonError(w, "erreur interne", http.StatusInternalServerError)
+		} else {
+			http.Error(w, "erreur interne", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Always 200 regardless of whether the email exists (anti-enumeration).
+	if isJSON {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		http.Redirect(w, r, "/reset-password/sent", http.StatusSeeOther)
+	}
+}
+
+// --- PasswordResetConfirm ---
+
+func (h *AuthHandler) PasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
+	if h.pwResetConfirm == nil {
+		http.Error(w, "not implemented", http.StatusNotImplemented)
+		return
+	}
+
+	var rawToken, newPassword string
+	isJSON := isJSONRequest(r)
+
+	if isJSON {
+		var req struct {
+			Token       string `json:"token"`
+			NewPassword string `json:"new_password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonError(w, "invalid JSON", http.StatusBadRequest)
+			return
+		}
+		rawToken, newPassword = req.Token, req.NewPassword
+	} else {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad form", http.StatusBadRequest)
+			return
+		}
+		rawToken = r.FormValue("token")
+		newPassword = r.FormValue("new_password")
+	}
+
+	err := h.pwResetConfirm.Confirm(r.Context(), auth.PasswordResetConfirmInput{
+		RawToken:    rawToken,
+		NewPassword: newPassword,
+	})
+	if err != nil {
+		handlePasswordResetConfirmError(w, r, err, isJSON)
+		return
+	}
+
+	if isJSON {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		http.Redirect(w, r, "/login?password_reset=1", http.StatusSeeOther)
+	}
+}
+
+func handlePasswordResetConfirmError(w http.ResponseWriter, _ *http.Request, err error, isJSON bool) {
+	var status int
+	var msg string
+
+	switch {
+	case errors.Is(err, token.ErrTokenNotFound), errors.Is(err, token.ErrTokenExpired), errors.Is(err, token.ErrTokenAlreadyConsumed):
+		status, msg = http.StatusBadRequest, "lien invalide ou expiré"
+	case errors.Is(err, account.ErrPasswordTooShort), errors.Is(err, account.ErrPasswordTooWeak):
+		status, msg = http.StatusBadRequest, "mot de passe trop faible"
+	default:
+		status, msg = http.StatusInternalServerError, "erreur interne"
+	}
+
+	if isJSON {
+		jsonError(w, msg, status)
+	} else {
+		http.Error(w, msg, status)
 	}
 }
 

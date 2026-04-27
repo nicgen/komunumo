@@ -75,3 +75,23 @@ func (r *TokenRepository) CountActive(accountID string, kind token.Kind, now tim
 	}
 	return n
 }
+
+func (r *TokenRepository) CountByKind(kind token.Kind) int {
+	n := 0
+	for _, t := range r.byID {
+		if t.Kind == kind {
+			n++
+		}
+	}
+	return n
+}
+
+func (r *TokenRepository) CountActiveByKind(kind token.Kind) int {
+	n := 0
+	for _, t := range r.byID {
+		if t.Kind == kind && t.ConsumedAt == nil {
+			n++
+		}
+	}
+	return n
+}
