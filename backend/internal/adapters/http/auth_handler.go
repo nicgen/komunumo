@@ -24,6 +24,7 @@ type AuthHandler struct {
 	logout         *auth.LogoutService
 	pwResetRequest *auth.PasswordResetRequestService
 	pwResetConfirm *auth.PasswordResetConfirmService
+	me             *auth.MeService
 }
 
 func NewAuthHandler(
@@ -34,11 +35,13 @@ func NewAuthHandler(
 	logout *auth.LogoutService,
 	pwResetRequest *auth.PasswordResetRequestService,
 	pwResetConfirm *auth.PasswordResetConfirmService,
+	me *auth.MeService,
 ) *AuthHandler {
 	return &AuthHandler{
 		register: register, verify: verify, resend: resend,
 		login: login, logout: logout,
 		pwResetRequest: pwResetRequest, pwResetConfirm: pwResetConfirm,
+		me: me,
 	}
 }
 
@@ -471,6 +474,44 @@ func handlePasswordResetConfirmError(w http.ResponseWriter, _ *http.Request, err
 	} else {
 		http.Error(w, msg, status)
 	}
+}
+
+// --- Me ---
+
+type meResponse struct {
+	AccountID string `json:"account_id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Status    string `json:"status"`
+}
+
+func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
+	if h.me == nil {
+		http.Error(w, "not implemented", http.StatusNotImplemented)
+		return
+	}
+
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil || cookie.Value == "" {
+		jsonError(w, "non authentifié", http.StatusUnauthorized)
+		return
+	}
+
+	out, err := h.me.Me(r.Context(), cookie.Value)
+	if err != nil {
+		jsonError(w, "non authentifié", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(meResponse{
+		AccountID: out.AccountID,
+		Email:     out.Email,
+		FirstName: out.FirstName,
+		LastName:  out.LastName,
+		Status:    string(out.Status),
+	})
 }
 
 // --- helpers ---

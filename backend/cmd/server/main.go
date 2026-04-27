@@ -68,8 +68,9 @@ func run(logger *slog.Logger) error {
 	logoutSvc := auth.NewLogoutService(sessionRepo, auditRepo, tokenGen, clk)
 	pwResetReqSvc := auth.NewPasswordResetRequestService(accounts, tokens, auditRepo, emailSender, tokenGen, clk, rl, uow)
 	pwResetConfSvc := auth.NewPasswordResetConfirmService(accounts, tokens, sessionRepo, auditRepo, emailSender, hasher, tokenGen, clk, uow)
+	meSvc := auth.NewMeService(sessionRepo, accounts, clk)
 
-	authHandler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc)
+	authHandler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc)
 	router := httpadapter.NewRouter(authHandler)
 
 	srv := &http.Server{
