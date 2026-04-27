@@ -52,6 +52,8 @@ frontend/
 
 **Checkpoint**: `make test` (backend, vide) et `pnpm test` (frontend, vide) passent ; `make migrate-up` est appelable.
 
+> **Setup note**: `make migrate-up` requires the `migrate` CLI binary (`github.com/golang-migrate/migrate/v4/cmd/migrate`). It is **not** installed by `go get` — must be installed separately: `go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest`. Future onboarding scripts / CI must ensure this binary is present.
+
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
@@ -77,6 +79,7 @@ frontend/
 - [x] T024 [P] Implement `backend/internal/adapters/http/middleware/rate_limit.go` consuming `ports.RateLimiter`
 - [x] T025 [P] Implement structured logging in `backend/internal/adapters/log/slog.go` (slog JSON, redacts `password`, `password_hash`, `token`, `email` fields)
 - [x] T026 Wire composition root in `backend/cmd/server/main.go`: load env, open DB, instantiate adapters, mount router (handlers vides → 501)
+  - **Note**: env loading implemented as `envOr(key, fallback)` (reads process env with hardcoded fallbacks). File-based loading (`.env`) and 1Password CLI integration are **not yet implemented** — deferred to Phase 7 or a dedicated infra task.
 - [x] T027 [P] Create frontend layout `frontend/app/(auth)/layout.tsx` (centered, accessible main landmark, skip-link)
 - [x] T028 [P] Create frontend `frontend/lib/api.ts` (typed fetch wrapper, includes credentials, attaches CSRF header from cookie)
 - [x] T029 [P] Create frontend `frontend/lib/auth.ts` (server-side helper reading `__Host-session` cookie + GET /api/v1/auth/me)
@@ -93,42 +96,42 @@ frontend/
 
 ### Tests for US1 (TEST-FIRST — Constitution principe III)
 
-- [ ] T030 [P] [US1] Domain test `backend/internal/domain/account/account_test.go`: invariants email canonical (NFKC + lowercase), age >= 16, status transitions
-- [ ] T031 [P] [US1] Domain test `backend/internal/domain/account/password_test.go`: password policy (>= 12 chars, classes), erreurs typées
-- [ ] T032 [P] [US1] Domain test `backend/internal/domain/token/token_test.go`: TTL 24h, single-consume, revoke active
-- [ ] T033 [P] [US1] Application test `backend/internal/application/auth/register_test.go`: cas nominal, email déjà utilisé, age < 16, password trop faible, échec Brevo (transactionnel — pas de compte créé)
-- [ ] T034 [P] [US1] Application test `backend/internal/application/auth/verify_email_test.go`: token valide, expiré, déjà consommé, inconnu
-- [ ] T035 [P] [US1] Application test `backend/internal/application/auth/resend_verification_test.go`: rate limit 1/email/15min, révocation des tokens précédents
-- [ ] T036 [US1] Adapter integration test `backend/internal/adapters/db/account_repository_test.go`: Create + FindByEmailCanonical + UpdateStatus sur SQLite fichier temp
-- [ ] T037 [P] [US1] Adapter integration test `backend/internal/adapters/db/token_repository_test.go`: Create + FindActiveByHash + Consume + RevokeActiveForAccount
-- [ ] T038 [P] [US1] Adapter integration test `backend/internal/adapters/db/audit_repository_test.go`: Append OK ; UPDATE/DELETE doivent échouer (vérifie les triggers)
-- [ ] T039 [P] [US1] Adapter test `backend/internal/adapters/email/brevo_test.go`: mock HTTP server, vérifie payload + headers Brevo, retours 200/4xx/5xx mappés en erreurs typées
-- [ ] T040 [P] [US1] HTTP contract test `backend/internal/adapters/http/auth_handler_register_test.go`: 201 JSON, 303 form-encoded, 400 validation, 429 rate limit, anti-énumération sur email existant
-- [ ] T041 [P] [US1] HTTP contract test `backend/internal/adapters/http/auth_handler_verify_email_test.go`: 200/303 OK, 400 token invalide, 410 expiré
-- [ ] T042 [P] [US1] Frontend a11y test `frontend/tests/unit/register.test.tsx`: axe-core 0 violations sur la page `/register`
+- [x] T030 [P] [US1] Domain test `backend/internal/domain/account/account_test.go`: invariants email canonical (NFKC + lowercase), age >= 16, status transitions
+- [x] T031 [P] [US1] Domain test `backend/internal/domain/account/password_test.go`: password policy (>= 12 chars, classes), erreurs typées
+- [x] T032 [P] [US1] Domain test `backend/internal/domain/token/token_test.go`: TTL 24h, single-consume, revoke active
+- [x] T033 [P] [US1] Application test `backend/internal/application/auth/register_test.go`: cas nominal, email déjà utilisé, age < 16, password trop faible, échec Brevo (transactionnel — pas de compte créé)
+- [x] T034 [P] [US1] Application test `backend/internal/application/auth/verify_email_test.go`: token valide, expiré, déjà consommé, inconnu
+- [x] T035 [P] [US1] Application test `backend/internal/application/auth/resend_verification_test.go`: rate limit 1/email/15min, révocation des tokens précédents
+- [x] T036 [US1] Adapter integration test `backend/internal/adapters/db/account_repository_test.go`: Create + FindByEmailCanonical + UpdateStatus sur SQLite fichier temp
+- [x] T037 [P] [US1] Adapter integration test `backend/internal/adapters/db/token_repository_test.go`: Create + FindActiveByHash + Consume + RevokeActiveForAccount
+- [x] T038 [P] [US1] Adapter integration test `backend/internal/adapters/db/audit_repository_test.go`: Append OK ; UPDATE/DELETE doivent échouer (vérifie les triggers)
+- [x] T039 [P] [US1] Adapter test `backend/internal/adapters/email/brevo_test.go`: mock HTTP server, vérifie payload + headers Brevo, retours 200/4xx/5xx mappés en erreurs typées
+- [x] T040 [P] [US1] HTTP contract test `backend/internal/adapters/http/auth_handler_register_test.go`: 201 JSON, 303 form-encoded, 400 validation, 429 rate limit, anti-énumération sur email existant
+- [x] T041 [P] [US1] HTTP contract test `backend/internal/adapters/http/auth_handler_verify_email_test.go`: 200/303 OK, 400 token invalide, 410 expiré
+- [x] T042 [P] [US1] Frontend a11y test `frontend/tests/unit/register.test.tsx`: axe-core 0 violations sur la page `/register`
 
 ### Implementation for US1
 
-- [ ] T043 [US1] Implement `backend/internal/domain/account/account.go` + `password.go` to make T030–T031 green
-- [ ] T044 [US1] Implement `backend/internal/domain/token/token.go` to make T032 green
-- [ ] T045 [P] [US1] Write SQL queries `backend/internal/adapters/db/queries/accounts.sql` (CreateAccount, GetAccountByEmailCanonical, UpdateAccountStatus, etc.) and run `make sqlc`
-- [ ] T046 [P] [US1] Write SQL queries `backend/internal/adapters/db/queries/tokens.sql` (CreateToken, GetActiveTokenByHash, ConsumeToken, RevokeActiveTokensForAccount) and run `make sqlc`
-- [ ] T047 [P] [US1] Write SQL queries `backend/internal/adapters/db/queries/audit_log.sql` (AppendAuditEvent) and run `make sqlc`
-- [ ] T048 [US1] Implement `backend/internal/adapters/db/account_repository.go` to make T036 green
-- [ ] T049 [P] [US1] Implement `backend/internal/adapters/db/token_repository.go` to make T037 green
-- [ ] T050 [P] [US1] Implement `backend/internal/adapters/db/audit_repository.go` to make T038 green
-- [ ] T051 [P] [US1] Implement `backend/internal/adapters/db/unit_of_work.go` (Tx via context key)
-- [ ] T052 [US1] Implement `backend/internal/adapters/email/brevo.go` (HTTP client API Brevo v3, fail-fast on non-2xx) to make T039 green
-- [ ] T053 [P] [US1] Create email templates `backend/internal/adapters/email/templates/verify_email.html` (RGAA AAA, alt text, contraste)
-- [ ] T054 [US1] Implement `backend/internal/application/auth/register.go` (UnitOfWork: insert account + insert token + insert audit; send email; if email fails → rollback) to make T033 green
-- [ ] T055 [US1] Implement `backend/internal/application/auth/verify_email.go` (UnitOfWork: load token, consume, update account status, audit) to make T034 green
-- [ ] T056 [US1] Implement `backend/internal/application/auth/resend_verification.go` to make T035 green
-- [ ] T057 [US1] Implement HTTP handlers `backend/internal/adapters/http/auth_handler.go` for `POST /api/v1/auth/register`, `POST /api/v1/auth/verify-email`, `POST /api/v1/auth/resend-verification` (dual content-type) to make T040–T041 green
-- [ ] T058 [US1] Mount US1 routes in `backend/internal/adapters/http/router.go` with rate limit middleware
-- [ ] T059 [P] [US1] Create page `frontend/app/(auth)/register/page.tsx` (RSC + form action, server validation echo, `<form action method=post>`)
-- [ ] T060 [P] [US1] Create page `frontend/app/(auth)/verify-email/sent/page.tsx` (informationnel, lien resend)
-- [ ] T061 [P] [US1] Create page `frontend/app/(auth)/verify-email/confirm/page.tsx` (server component, lit `?token=`, POST /api/v1/auth/verify-email, redirige vers /login?verified=1)
-- [ ] T062 [P] [US1] Add seed data `backend/scripts/seed.sql` with 1 verified test account for the rest of the stories
+- [x] T043 [US1] Implement `backend/internal/domain/account/account.go` + `password.go` to make T030–T031 green
+- [x] T044 [US1] Implement `backend/internal/domain/token/token.go` to make T032 green
+- [x] T045 [P] [US1] Write SQL queries `backend/internal/adapters/db/queries/accounts.sql` (CreateAccount, GetAccountByEmailCanonical, UpdateAccountStatus, etc.) and run `make sqlc`
+- [x] T046 [P] [US1] Write SQL queries `backend/internal/adapters/db/queries/tokens.sql` (CreateToken, GetActiveTokenByHash, ConsumeToken, RevokeActiveTokensForAccount) and run `make sqlc`
+- [x] T047 [P] [US1] Write SQL queries `backend/internal/adapters/db/queries/audit_log.sql` (AppendAuditEvent) and run `make sqlc`
+- [x] T048 [US1] Implement `backend/internal/adapters/db/account_repository.go` to make T036 green
+- [x] T049 [P] [US1] Implement `backend/internal/adapters/db/token_repository.go` to make T037 green
+- [x] T050 [P] [US1] Implement `backend/internal/adapters/db/audit_repository.go` to make T038 green
+- [x] T051 [P] [US1] Implement `backend/internal/adapters/db/unit_of_work.go` (Tx via context key)
+- [x] T052 [US1] Implement `backend/internal/adapters/email/brevo.go` (HTTP client API Brevo v3, fail-fast on non-2xx) to make T039 green
+- [x] T053 [P] [US1] Create email templates `backend/internal/adapters/email/templates/verify_email.html` (RGAA AAA, alt text, contraste)
+- [x] T054 [US1] Implement `backend/internal/application/auth/register.go` (UnitOfWork: insert account + insert token + insert audit; send email; if email fails → rollback) to make T033 green
+- [x] T055 [US1] Implement `backend/internal/application/auth/verify_email.go` (UnitOfWork: load token, consume, update account status, audit) to make T034 green
+- [x] T056 [US1] Implement `backend/internal/application/auth/resend_verification.go` to make T035 green
+- [x] T057 [US1] Implement HTTP handlers `backend/internal/adapters/http/auth_handler.go` for `POST /api/v1/auth/register`, `POST /api/v1/auth/verify-email`, `POST /api/v1/auth/resend-verification` (dual content-type) to make T040–T041 green
+- [x] T058 [US1] Mount US1 routes in `backend/internal/adapters/http/router.go` with rate limit middleware
+- [x] T059 [P] [US1] Create page `frontend/app/(auth)/register/page.tsx` (RSC + form action, server validation echo, `<form action method=post>`)
+- [x] T060 [P] [US1] Create page `frontend/app/(auth)/verify-email/sent/page.tsx` (informationnel, lien resend)
+- [x] T061 [P] [US1] Create page `frontend/app/(auth)/verify-email/confirm/page.tsx` (server component, lit `?token=`, POST /api/v1/auth/verify-email, redirige vers /login?verified=1)
+- [x] T062 [P] [US1] Add seed data `backend/scripts/seed.sql` with 1 verified test account for the rest of the stories
 
 **Checkpoint US1**: parcours inscription → email → vérification fonctionnel, audit log contient `account.created` + `account.email_verified`, RGAA AAA validée par axe-core.
 

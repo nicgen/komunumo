@@ -10,15 +10,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
 	"komunumo/backend/internal/adapters/clock"
 	"komunumo/backend/internal/adapters/db"
-	"komunumo/backend/internal/adapters/http/middleware"
+	"komunumo/backend/internal/adapters/email"
+	httpadapter "komunumo/backend/internal/adapters/http"
 	"komunumo/backend/internal/adapters/log"
 	"komunumo/backend/internal/adapters/password"
 	"komunumo/backend/internal/adapters/ratelimit"
 	"komunumo/backend/internal/adapters/tokengen"
+	"komunumo/backend/internal/application/auth"
 )
 
 func main() {
@@ -34,6 +34,8 @@ func main() {
 func run(logger *slog.Logger) error {
 	dsn := envOr("KOMUNUMO_SQLITE_DSN", "./komunumo.db")
 	addr := envOr("KOMUNUMO_HTTP_ADDR", ":8080")
+	brevoKey := envOr("KOMUNUMO_BREVO_API_KEY", "test-key-noop")
+	appBaseURL := envOr("KOMUNUMO_APP_BASE_URL", "http://localhost:3000")
 
 	conn, err := db.Open(dsn)
 	if err != nil {
@@ -41,35 +43,33 @@ func run(logger *slog.Logger) error {
 	}
 	defer conn.Close()
 
-	// Adapter wiring. Repositories + use cases will be added in later tasks
-	// (T048+). For now we keep the composition root minimal: it must compile,
-	// boot, and serve a 501 on every /api/v1/auth/* route.
-	_ = clock.New()
-	_ = password.New()
-	_ = tokengen.New()
-	_ = ratelimit.New(60, time.Minute)
+	clk := clock.New()
+	hasher := password.New()
+	tokenGen := tokengen.New()
+	rl := ratelimit.New(60, time.Minute)
+	uow := db.NewUnitOfWork(conn)
 
-	r := chi.NewRouter()
-	r.Use(middleware.SecurityHeaders)
-	r.Use(middleware.CSRF)
+	accounts := db.NewAccountRepository(conn)
+	tokens := db.NewTokenRepository(conn)
+	auditRepo := db.NewAuditRepository(conn)
 
-	r.Route("/api/v1/auth", func(r chi.Router) {
-		notImpl := func(w http.ResponseWriter, _ *http.Request) {
-			http.Error(w, "not implemented", http.StatusNotImplemented)
-		}
-		r.Post("/register", notImpl)
-		r.Post("/verify-email", notImpl)
-		r.Post("/resend-verification", notImpl)
-		r.Post("/login", notImpl)
-		r.Post("/logout", notImpl)
-		r.Get("/me", notImpl)
-		r.Post("/password-reset/request", notImpl)
-		r.Post("/password-reset/confirm", notImpl)
+	emailSender := email.NewBrevoSender(email.BrevoConfig{
+		APIKey:     brevoKey,
+		FromEmail:  "noreply@komunumo.fr",
+		FromName:   "Komunumo",
+		AppBaseURL: appBaseURL,
 	})
+
+	registerSvc := auth.NewRegisterService(accounts, tokens, auditRepo, emailSender, hasher, tokenGen, clk, rl, uow)
+	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditRepo, tokenGen, clk, uow)
+	resendSvc := auth.NewResendVerificationService(accounts, tokens, auditRepo, emailSender, tokenGen, clk, rl, uow)
+
+	authHandler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, nil, nil)
+	router := httpadapter.NewRouter(authHandler)
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           r,
+		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
