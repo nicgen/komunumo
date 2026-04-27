@@ -29,7 +29,7 @@ func newVerifyEmailHandler(t *testing.T) (*httpadapter.AuthHandler, *fakes.Accou
 	uow := fakes.NewUnitOfWork()
 
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditLog, tokenGen, clk, uow)
-	handler := httpadapter.NewAuthHandler(nil, verifySvc, nil, nil, nil, nil, nil)
+	handler := httpadapter.NewAuthHandler(nil, verifySvc, nil, nil, nil, nil, nil, nil)
 	return handler, accounts, tokens
 }
 
@@ -108,7 +108,7 @@ func TestVerifyEmailHandler_ExpiredToken_410(t *testing.T) {
 	rawToken := seedVerifyScenario(t, accounts, tokens, now)
 
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditLog, tokenGen, clk, uow)
-	handler := httpadapter.NewAuthHandler(nil, verifySvc, nil, nil, nil, nil, nil)
+	handler := httpadapter.NewAuthHandler(nil, verifySvc, nil, nil, nil, nil, nil, nil)
 
 	body := strings.NewReader(`{"token":"` + rawToken + `"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify-email", body)

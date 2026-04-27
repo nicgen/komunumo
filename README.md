@@ -48,7 +48,7 @@ cd frontend && pnpm install && pnpm dev
 
 ## Licence
 
-Code propriétaire de Nicolas Genin (2026). À reconsidérer post-soutenance (AGPL-3.0 envisagée).
+Code propriétaire de Nicolas Genty (2026). À reconsidérer post-soutenance (AGPL-3.0 envisagée).
 
 ## Contact
 

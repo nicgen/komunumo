@@ -19,9 +19,11 @@ import (
 	"komunumo/backend/internal/adapters/ratelimit"
 	"komunumo/backend/internal/adapters/tokengen"
 	"komunumo/backend/internal/application/auth"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load()
 	logger := log.New(os.Stdout, slog.LevelInfo)
 	slog.SetDefault(logger)
 
@@ -36,6 +38,8 @@ func run(logger *slog.Logger) error {
 	addr := envOr("KOMUNUMO_HTTP_ADDR", ":8080")
 	brevoKey := envOr("KOMUNUMO_BREVO_API_KEY", "test-key-noop")
 	appBaseURL := envOr("KOMUNUMO_APP_BASE_URL", "http://localhost:3000")
+	fromEmail := envOr("KOMUNUMO_BREVO_FROM_EMAIL", "noreply@komunumo.fr")
+	fromName := envOr("KOMUNUMO_BREVO_FROM_NAME", "Komunumo")
 
 	conn, err := db.Open(dsn)
 	if err != nil {
@@ -55,8 +59,8 @@ func run(logger *slog.Logger) error {
 
 	emailSender := email.NewBrevoSender(email.BrevoConfig{
 		APIKey:     brevoKey,
-		FromEmail:  "noreply@komunumo.fr",
-		FromName:   "Komunumo",
+		FromEmail:  fromEmail,
+		FromName:   fromName,
 		AppBaseURL: appBaseURL,
 	})
 
