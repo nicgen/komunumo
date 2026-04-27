@@ -17,13 +17,20 @@ type Querier interface {
 	CreateEmailVerification(ctx context.Context, arg CreateEmailVerificationParams) error
 	// Password Reset Queries
 	CreatePasswordReset(ctx context.Context, arg CreatePasswordResetParams) error
+	// Session Queries
+	CreateSession(ctx context.Context, arg CreateSessionParams) error
+	DeleteAllSessionsForAccount(ctx context.Context, accountID string) error
+	DeleteExpiredSessions(ctx context.Context, expiresAt string) (int64, error)
+	DeleteSession(ctx context.Context, id string) error
 	GetAccountByEmailCanonical(ctx context.Context, emailCanonical string) (Account, error)
 	GetAccountByID(ctx context.Context, id string) (Account, error)
 	GetActiveEmailVerificationByHash(ctx context.Context, arg GetActiveEmailVerificationByHashParams) (EmailVerification, error)
 	GetActivePasswordResetByHash(ctx context.Context, arg GetActivePasswordResetByHashParams) (PasswordReset, error)
+	GetSessionByID(ctx context.Context, id string) (Session, error)
 	RevokeActiveEmailVerificationsForAccount(ctx context.Context, arg RevokeActiveEmailVerificationsForAccountParams) error
 	RevokeActivePasswordResetsForAccount(ctx context.Context, arg RevokeActivePasswordResetsForAccountParams) error
 	TouchAccountLastLogin(ctx context.Context, arg TouchAccountLastLoginParams) error
+	TouchSessionLastSeen(ctx context.Context, arg TouchSessionLastSeenParams) error
 	UpdateAccountPasswordHash(ctx context.Context, arg UpdateAccountPasswordHashParams) error
 	UpdateAccountStatus(ctx context.Context, arg UpdateAccountStatusParams) error
 }

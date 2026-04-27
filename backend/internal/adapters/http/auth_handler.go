@@ -11,24 +11,27 @@ import (
 	"komunumo/backend/internal/domain/token"
 )
 
+const sessionCookieName = "session_id"
+const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
+
 // AuthHandler wires application services to HTTP.
 // Nil services indicate features not yet wired (returns 501).
 type AuthHandler struct {
 	register *auth.RegisterService
 	verify   *auth.VerifyEmailService
 	resend   *auth.ResendVerificationService
-	login    any // wired in Phase 4 (T075-T077)
-	me       any // wired in Phase 4
+	login    *auth.LoginService
+	logout   *auth.LogoutService
 }
 
 func NewAuthHandler(
 	register *auth.RegisterService,
 	verify *auth.VerifyEmailService,
 	resend *auth.ResendVerificationService,
-	login any,
-	me any,
+	login *auth.LoginService,
+	logout *auth.LogoutService,
 ) *AuthHandler {
-	return &AuthHandler{register: register, verify: verify, resend: resend, login: login, me: me}
+	return &AuthHandler{register: register, verify: verify, resend: resend, login: login, logout: logout}
 }
 
 // --- Register ---
@@ -220,6 +223,122 @@ func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		http.Redirect(w, r, "/verify-email/sent", http.StatusSeeOther)
+	}
+}
+
+// --- Login ---
+
+type loginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	if h.login == nil {
+		http.Error(w, "not implemented", http.StatusNotImplemented)
+		return
+	}
+
+	var email, password string
+	isJSON := isJSONRequest(r)
+
+	if isJSON {
+		var req loginRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonError(w, "invalid JSON", http.StatusBadRequest)
+			return
+		}
+		email, password = req.Email, req.Password
+	} else {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad form", http.StatusBadRequest)
+			return
+		}
+		email = r.FormValue("email")
+		password = r.FormValue("password")
+	}
+
+	out, err := h.login.Login(r.Context(), auth.LoginInput{
+		Email:     email,
+		Password:  password,
+		IP:        clientIP(r),
+		UserAgent: r.UserAgent(),
+	})
+	if err != nil {
+		handleLoginError(w, r, err, isJSON)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    out.SessionID,
+		MaxAge:   sessionCookieMaxAge,
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+
+	if isJSON {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		http.Redirect(w, r, "/home", http.StatusSeeOther)
+	}
+}
+
+func handleLoginError(w http.ResponseWriter, _ *http.Request, err error, isJSON bool) {
+	var status int
+	var msg string
+
+	switch {
+	case errors.Is(err, auth.ErrInvalidCredentials):
+		status, msg = http.StatusUnauthorized, "identifiants incorrects"
+	case errors.Is(err, account.ErrAccountNotVerified):
+		status, msg = http.StatusForbidden, "email non vérifié"
+	case errors.Is(err, account.ErrAccountDisabled):
+		status, msg = http.StatusForbidden, "compte désactivé"
+	case errors.Is(err, auth.ErrRateLimited):
+		status, msg = http.StatusTooManyRequests, "trop de tentatives"
+	default:
+		status, msg = http.StatusInternalServerError, "erreur interne"
+	}
+
+	if isJSON {
+		jsonError(w, msg, status)
+	} else {
+		http.Error(w, msg, status)
+	}
+}
+
+// --- Logout ---
+
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if h.logout == nil {
+		http.Error(w, "not implemented", http.StatusNotImplemented)
+		return
+	}
+
+	cookie, err := r.Cookie(sessionCookieName)
+	if err == nil && cookie.Value != "" {
+		_ = h.logout.Logout(r.Context(), cookie.Value)
+	}
+
+	// Clear the cookie regardless of whether session existed.
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    "",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+
+	isJSON := isJSONRequest(r)
+	if isJSON {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 

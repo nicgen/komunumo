@@ -29,3 +29,12 @@ func (r *AuditRepository) LastOfType(t audit.EventType) *audit.Event {
 	}
 	return nil
 }
+
+func (r *AuditRepository) ContainsType(t string) bool {
+	for _, e := range r.Events {
+		if string(e.Type) == t {
+			return true
+		}
+	}
+	return false
+}

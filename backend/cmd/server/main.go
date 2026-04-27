@@ -63,8 +63,10 @@ func run(logger *slog.Logger) error {
 	registerSvc := auth.NewRegisterService(accounts, tokens, auditRepo, emailSender, hasher, tokenGen, clk, rl, uow)
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditRepo, tokenGen, clk, uow)
 	resendSvc := auth.NewResendVerificationService(accounts, tokens, auditRepo, emailSender, tokenGen, clk, rl, uow)
+	loginSvc := auth.NewLoginService(accounts, db.NewSessionRepository(conn), auditRepo, hasher, tokenGen, clk, rl, uow)
+	logoutSvc := auth.NewLogoutService(db.NewSessionRepository(conn), auditRepo, tokenGen, clk)
 
-	authHandler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, nil, nil)
+	authHandler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc)
 	router := httpadapter.NewRouter(authHandler)
 
 	srv := &http.Server{
