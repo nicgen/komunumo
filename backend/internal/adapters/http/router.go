@@ -10,23 +10,24 @@ import (
 func NewRouter(auth *AuthHandler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.SecurityHeaders)
-	r.Use(middleware.CSRF)
 
+	notImpl := func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "not implemented", http.StatusNotImplemented)
+	}
+
+	// Public auth endpoints — CSRF-exempt per D-009 (unauthenticated).
 	r.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/register", auth.Register)
 		r.Post("/verify-email", auth.VerifyEmail)
 		r.Post("/resend-verification", auth.ResendVerification)
-
-		// Phase 4 (US2)
-		notImpl := func(w http.ResponseWriter, _ *http.Request) {
-			http.Error(w, "not implemented", http.StatusNotImplemented)
-		}
 		r.Post("/login", notImpl)
 		r.Post("/logout", notImpl)
 		r.Get("/me", notImpl)
 		r.Post("/password-reset/request", notImpl)
 		r.Post("/password-reset/confirm", notImpl)
 	})
+
+	// Protected routes (Phase 4+) will go here with r.Use(middleware.CSRF).
 
 	return r
 }
