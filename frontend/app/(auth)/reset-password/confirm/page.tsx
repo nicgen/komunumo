@@ -1,18 +1,18 @@
-import { VerifyEmailConfirmForm } from "@/components/auth/verify-email-confirm-form";
+import { ResetPasswordConfirmForm } from "@/components/auth/reset-password-confirm-form";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircle, ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Confirmer la vérification",
-  description: "Confirmation de votre adresse email",
+  title: "Réinitialiser le mot de passe",
+  description: "Choisissez un nouveau mot de passe pour votre compte Assolink",
 };
 
 type PageProps = {
   searchParams: Promise<{ token?: string }>;
 };
 
-export default async function VerifyEmailConfirmPage(props: PageProps) {
+export default async function ResetPasswordConfirmPage(props: PageProps) {
   const searchParams = await props.searchParams;
   const token = searchParams.token;
 
@@ -23,16 +23,16 @@ export default async function VerifyEmailConfirmPage(props: PageProps) {
           <XCircle className="h-4 w-4" />
           <AlertTitle>Lien invalide ou expiré</AlertTitle>
           <AlertDescription>
-            Le lien de vérification n'est pas valide ou a expiré. Veuillez demander un nouvel
-            email de vérification.
+            Le lien de réinitialisation n'est pas valide ou a expiré. Veuillez faire une nouvelle
+            demande.
           </AlertDescription>
         </Alert>
 
         <div className="text-center">
           <Button asChild variant="outline">
-            <a href="/verify-email/sent" className="inline-flex items-center">
+            <a href="/forgot-password" className="inline-flex items-center">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Renvoyer l'email
+              Nouvelle demande
             </a>
           </Button>
         </div>
@@ -40,5 +40,5 @@ export default async function VerifyEmailConfirmPage(props: PageProps) {
     );
   }
 
-  return <VerifyEmailConfirmForm token={token} />;
+  return <ResetPasswordConfirmForm token={token} />;
 }

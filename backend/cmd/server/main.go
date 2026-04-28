@@ -19,6 +19,7 @@ import (
 	"komunumo/backend/internal/adapters/ratelimit"
 	"komunumo/backend/internal/adapters/tokengen"
 	"komunumo/backend/internal/application/auth"
+	"komunumo/backend/internal/ports"
 	"github.com/joho/godotenv"
 )
 
@@ -57,12 +58,19 @@ func run(logger *slog.Logger) error {
 	tokens := db.NewTokenRepository(conn)
 	auditRepo := db.NewAuditRepository(conn)
 
-	emailSender := email.NewBrevoSender(email.BrevoConfig{
-		APIKey:     brevoKey,
-		FromEmail:  fromEmail,
-		FromName:   fromName,
-		AppBaseURL: appBaseURL,
-	})
+	var emailSender ports.EmailSender
+	if brevoKey == "" || brevoKey == "test-key-noop" || os.Getenv("NODE_ENV") == "development" {
+		logger.Info("using log email sender")
+		emailSender = email.NewLogSender(appBaseURL)
+	} else {
+		logger.Info("using brevo email sender")
+		emailSender = email.NewBrevoSender(email.BrevoConfig{
+			APIKey:     brevoKey,
+			FromEmail:  fromEmail,
+			FromName:   fromName,
+			AppBaseURL: appBaseURL,
+		})
+	}
 
 	registerSvc := auth.NewRegisterService(accounts, tokens, auditRepo, emailSender, hasher, tokenGen, clk, rl, uow)
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditRepo, tokenGen, clk, uow)
