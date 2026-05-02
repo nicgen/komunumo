@@ -31,8 +31,8 @@ var (
 	ErrAboutMeTooLong   = errors.New("member: about_me must not exceed 500 characters")
 )
 
-// New creates a Member after validating all invariants against the current time.
-func New(accountID, firstName, lastName, birthDate string) (*Member, error) {
+// New creates a Member after validating all invariants against the provided time.
+func New(accountID, firstName, lastName, birthDate string, now time.Time) (*Member, error) {
 	if firstName == "" || lastName == "" {
 		return nil, ErrInvalidName
 	}
@@ -42,9 +42,9 @@ func New(accountID, firstName, lastName, birthDate string) (*Member, error) {
 		return nil, ErrInvalidBirthDate
 	}
 
-	now := time.Now().UTC()
+	now = now.UTC()
 	age := now.Year() - dob.Year()
-	if now.YearDay() < dob.YearDay() {
+	if now.Month() < dob.Month() || (now.Month() == dob.Month() && now.Day() < dob.Day()) {
 		age--
 	}
 	if age < 18 {
