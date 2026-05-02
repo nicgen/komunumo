@@ -5,9 +5,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"komunumo/backend/internal/adapters/http/middleware"
+	"komunumo/backend/internal/ports"
 )
 
-func NewRouter(auth *AuthHandler, register *RegisterHandler) http.Handler {
+func NewRouter(auth *AuthHandler, register *RegisterHandler, profile *ProfileHandler, sessions ports.SessionRepository, clk ports.Clock) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.SecurityHeaders)
 
@@ -25,7 +26,15 @@ func NewRouter(auth *AuthHandler, register *RegisterHandler) http.Handler {
 		r.Post("/register/association", register.HandleRegisterAssociation)
 	})
 
-	// Protected routes (Phase 4+) will go here with r.Use(middleware.CSRF).
+	// Protected routes (US3+)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.CSRF)
+		r.Use(middleware.Auth(sessions, clk))
+
+		r.Get("/api/v1/me/profile", profile.HandleGetMyProfile)
+		r.Patch("/api/v1/me/profile", profile.HandleUpdateMyProfile)
+		r.Post("/api/v1/me/avatar", profile.HandleUploadAvatar)
+	})
 
 	return r
 }
