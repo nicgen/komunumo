@@ -84,8 +84,12 @@ func run(logger *slog.Logger) error {
 	memberRepo := db.NewMemberRepository(conn)
 	registerMemberSvc := auth.NewRegisterMemberService(accounts, memberRepo, auditRepo, emailSender, hasher, tokenGen, tokens, clk, rl, uow)
 
+	associationRepo := db.NewAssociationRepository(conn)
+	membershipRepo := db.NewMembershipRepository(conn)
+	registerAssociationSvc := auth.NewRegisterAssociationService(accounts, associationRepo, memberRepo, membershipRepo, auditRepo, emailSender, hasher, tokenGen, tokens, clk, rl, uow)
+
 	authHandler := httpadapter.NewAuthHandler(verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc)
-	registerHandler := httpadapter.NewRegisterHandler(registerMemberSvc)
+	registerHandler := httpadapter.NewRegisterHandler(registerMemberSvc, registerAssociationSvc)
 	router := httpadapter.NewRouter(authHandler, registerHandler)
 
 	srv := &http.Server{

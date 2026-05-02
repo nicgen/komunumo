@@ -22,6 +22,7 @@ func NewRouter(auth *AuthHandler, register *RegisterHandler) http.Handler {
 		r.Post("/password-reset/confirm", auth.PasswordResetConfirm)
 
 		r.Post("/register/member", register.HandleRegisterMember)
+		r.Post("/register/association", register.HandleRegisterAssociation)
 	})
 
 	// Protected routes (Phase 4+) will go here with r.Use(middleware.CSRF).

@@ -18,10 +18,12 @@ import (
 	"komunumo/backend/internal/ports/fakes"
 )
 
-func newRegisterHandler(t *testing.T) (*httpadapter.RegisterHandler, *fakes.AccountRepository, *fakes.MemberRepository, *fakes.RateLimiter) {
+func newRegisterHandler(t *testing.T) (*httpadapter.RegisterHandler, *fakes.AccountRepository, *fakes.MemberRepository, *fakes.AssociationRepository, *fakes.RateLimiter) {
 	t.Helper()
 	accounts := fakes.NewAccountRepository()
 	members := fakes.NewMemberRepository()
+	associations := fakes.NewAssociationRepository()
+	memberships := fakes.NewMembershipRepository()
 	auditLog := fakes.NewAuditRepository()
 	emails := fakes.NewEmailSender()
 	hasher := fakes.NewPasswordHasher()
@@ -31,13 +33,14 @@ func newRegisterHandler(t *testing.T) (*httpadapter.RegisterHandler, *fakes.Acco
 	rl := fakes.NewRateLimiter()
 	uow := fakes.NewUnitOfWork()
 
-	svc := auth.NewRegisterMemberService(accounts, members, auditLog, emails, hasher, tokenGen, tokens, clk, rl, uow)
-	handler := httpadapter.NewRegisterHandler(svc)
-	return handler, accounts, members, rl
+	memberSvc := auth.NewRegisterMemberService(accounts, members, auditLog, emails, hasher, tokenGen, tokens, clk, rl, uow)
+	assoSvc := auth.NewRegisterAssociationService(accounts, associations, members, memberships, auditLog, emails, hasher, tokenGen, tokens, clk, rl, uow)
+	handler := httpadapter.NewRegisterHandler(memberSvc, assoSvc)
+	return handler, accounts, members, associations, rl
 }
 
 func TestRegisterMemberHandler_Success_201(t *testing.T) {
-	handler, accounts, _, _ := newRegisterHandler(t)
+	handler, accounts, _, _, _ := newRegisterHandler(t)
 
 	body, _ := json.Marshal(map[string]any{
 		"email":      "lea@example.com",
@@ -62,7 +65,7 @@ func TestRegisterMemberHandler_Success_201(t *testing.T) {
 }
 
 func TestRegisterMemberHandler_TooYoung_422(t *testing.T) {
-	handler, _, _, _ := newRegisterHandler(t)
+	handler, _, _, _, _ := newRegisterHandler(t)
 
 	body, _ := json.Marshal(map[string]any{
 		"email":      "too-young@example.com",
@@ -82,7 +85,7 @@ func TestRegisterMemberHandler_TooYoung_422(t *testing.T) {
 }
 
 func TestRegisterMemberHandler_RateLimited_429(t *testing.T) {
-	handler, _, _, rl := newRegisterHandler(t)
+	handler, _, _, _, rl := newRegisterHandler(t)
 	rl.Block("register:ip:192.0.2.1")
 
 	body, _ := json.Marshal(map[string]any{
@@ -103,7 +106,7 @@ func TestRegisterMemberHandler_RateLimited_429(t *testing.T) {
 }
 
 func TestRegisterMemberHandler_InvalidJSON_400(t *testing.T) {
-	handler, _, _, _ := newRegisterHandler(t)
+	handler, _, _, _, _ := newRegisterHandler(t)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/member", bytes.NewReader([]byte("not json")))
 	req.Header.Set("Content-Type", "application/json")
@@ -116,7 +119,7 @@ func TestRegisterMemberHandler_InvalidJSON_400(t *testing.T) {
 }
 
 func TestRegisterMemberHandler_EmailTaken_409(t *testing.T) {
-	handler, accounts, _, _ := newRegisterHandler(t)
+	handler, accounts, _, _, _ := newRegisterHandler(t)
 
 	// Seed existing account
 	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
@@ -138,4 +141,81 @@ func TestRegisterMemberHandler_EmailTaken_409(t *testing.T) {
 	handler.HandleRegisterMember(rr, req)
 
 	assert.Equal(t, http.StatusConflict, rr.Code)
+}
+
+func TestRegisterAssociationHandler_Success_201(t *testing.T) {
+	handler, accounts, _, associations, _ := newRegisterHandler(t)
+
+	body, _ := json.Marshal(map[string]any{
+		"email":      "asso@example.com",
+		"password":   "SecurePass123!",
+		"legal_name": "Les Amis du Code",
+		"postal_code": "75011",
+		"first_name": "Anne",
+		"last_name":  "Dupont",
+		"birth_date": "1985-06-20",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/association", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
+	rr := httptest.NewRecorder()
+
+	handler.HandleRegisterAssociation(rr, req)
+
+	assert.Equal(t, http.StatusCreated, rr.Code)
+
+	canonical, _ := account.CanonicalizeEmail("asso@example.com")
+	acc, err := accounts.FindByEmailCanonical(context.Background(), canonical)
+	require.NoError(t, err)
+	assert.NotNil(t, acc)
+	assert.Equal(t, account.KindAssociation, acc.Kind)
+
+	asso, err := associations.FindByAccountID(context.Background(), acc.ID)
+	require.NoError(t, err)
+	assert.NotNil(t, asso)
+}
+
+func TestRegisterAssociationHandler_InvalidSIREN_422(t *testing.T) {
+	handler, _, _, _, _ := newRegisterHandler(t)
+
+	body, _ := json.Marshal(map[string]any{
+		"email":      "asso@example.com",
+		"password":   "SecurePass123!",
+		"legal_name": "Les Amis du Code",
+		"postal_code": "75011",
+		"siren":      "123",
+		"first_name": "Anne",
+		"last_name":  "Dupont",
+		"birth_date": "1985-06-20",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/association", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
+	rr := httptest.NewRecorder()
+
+	handler.HandleRegisterAssociation(rr, req)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, rr.Code)
+}
+
+func TestRegisterAssociationHandler_TooYoung_422(t *testing.T) {
+	handler, _, _, _, _ := newRegisterHandler(t)
+
+	body, _ := json.Marshal(map[string]any{
+		"email":      "asso@example.com",
+		"password":   "SecurePass123!",
+		"legal_name": "Les Amis du Code",
+		"postal_code": "75011",
+		"first_name": "Anne",
+		"last_name":  "Dupont",
+		"birth_date": "2015-06-20",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/association", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
+	rr := httptest.NewRecorder()
+
+	handler.HandleRegisterAssociation(rr, req)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, rr.Code)
 }
