@@ -73,10 +73,12 @@ export function MemberProfileForm({ initialData }: MemberProfileFormProps) {
           id="nickname"
           placeholder="Votre pseudo"
           disabled={isLoading}
+          aria-invalid={!!errors.nickname}
+          aria-describedby={errors.nickname ? "nickname-error" : undefined}
           {...register("nickname")}
         />
         {errors.nickname && (
-          <p className="text-xs text-destructive font-medium mt-1">{errors.nickname.message}</p>
+          <p id="nickname-error" className="text-xs text-destructive font-medium mt-1">{errors.nickname.message}</p>
         )}
       </div>
 
@@ -87,13 +89,15 @@ export function MemberProfileForm({ initialData }: MemberProfileFormProps) {
           placeholder="Dites-nous en plus sur vous..."
           className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading}
+          aria-invalid={!!errors.about_me}
+          aria-describedby={errors.about_me ? "about_me-error" : undefined}
           {...register("about_me")}
         />
         <p className="text-[10px] text-muted-foreground text-right">
           {watch("about_me")?.length || 0}/500
         </p>
         {errors.about_me && (
-          <p className="text-xs text-destructive font-medium mt-1">{errors.about_me.message}</p>
+          <p id="about_me-error" className="text-xs text-destructive font-medium mt-1">{errors.about_me.message}</p>
         )}
       </div>
 

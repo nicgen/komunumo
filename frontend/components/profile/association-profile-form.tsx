@@ -74,13 +74,15 @@ export function AssociationProfileForm({ initialData }: AssociationProfileFormPr
           placeholder="Décrivez l'objet de votre association..."
           className="flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading}
+          aria-invalid={!!errors.about}
+          aria-describedby={errors.about ? "about-error" : undefined}
           {...register("about")}
         />
         <p className="text-[10px] text-muted-foreground text-right">
           {watch("about")?.length || 0}/2000
         </p>
         {errors.about && (
-          <p className="text-xs text-destructive font-medium mt-1">{errors.about.message}</p>
+          <p id="about-error" className="text-xs text-destructive font-medium mt-1">{errors.about.message}</p>
         )}
       </div>
 
@@ -90,10 +92,12 @@ export function AssociationProfileForm({ initialData }: AssociationProfileFormPr
           id="postal_code"
           placeholder="75011"
           disabled={isLoading}
+          aria-invalid={!!errors.postal_code}
+          aria-describedby={errors.postal_code ? "postal_code-error" : undefined}
           {...register("postal_code")}
         />
         {errors.postal_code && (
-          <p className="text-xs text-destructive font-medium mt-1">{errors.postal_code.message}</p>
+          <p id="postal_code-error" className="text-xs text-destructive font-medium mt-1">{errors.postal_code.message}</p>
         )}
       </div>
 

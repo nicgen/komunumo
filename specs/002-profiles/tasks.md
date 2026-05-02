@@ -180,14 +180,14 @@ curl -s http://localhost:8080/api/v1/accounts/{ID_PRIVE}/profile | jq .
 
 ### Tests — US4
 
-- [ ] T052 [US4] Ajouter dans `backend/internal/application/profile/get_profile_test.go` : GetPublicProfile visibility=public → ProfileOutput sans birth_date, visibility=private → ErrNotFound, members_only sans session → ErrNotFound
+- [X] T052 [US4] Ajouter dans `backend/internal/application/profile/get_profile_test.go` : GetPublicProfile visibility=public → ProfileOutput sans birth_date, visibility=private → ErrNotFound, members_only sans session → ErrNotFound
 
 ### Implémentation — US4
 
-- [ ] T053 [US4] Ajouter `GetPublicProfile(ctx, accountID, viewerSessionID string) (ProfileOutput, error)` dans `backend/internal/application/profile/get_profile.go` (dépend de T052)
-- [ ] T054 [US4] Ajouter dans `backend/internal/adapters/http/profile_handler_test.go` : GET /accounts/{id}/profile 200 public, 404 private
-- [ ] T055 [US4] Ajouter `HandleGetPublicProfile` dans `backend/internal/adapters/http/profile_handler.go` (dépend de T054)
-- [ ] T056 [US4] Mettre à jour `backend/internal/adapters/http/router.go` : GET /api/v1/accounts/{accountId}/profile
+- [X] T053 [US4] Ajouter `GetPublicProfile(ctx, accountID, viewerSessionID string) (ProfileOutput, error)` dans `backend/internal/application/profile/get_profile.go` (dépend de T052)
+- [X] T054 [US4] Ajouter dans `backend/internal/adapters/http/profile_handler_test.go` : GET /accounts/{id}/profile 200 public, 404 private
+- [X] T055 [US4] Ajouter `HandleGetPublicProfile` dans `backend/internal/adapters/http/profile_handler.go` (dépend de T054)
+- [X] T056 [US4] Mettre à jour `backend/internal/adapters/http/router.go` : GET /api/v1/accounts/{accountId}/profile
 
 **Checkpoint**: Toutes les US sont fonctionnelles. Les 4 flux inscription/profil sont testables de bout en bout.
 
@@ -198,10 +198,10 @@ curl -s http://localhost:8080/api/v1/accounts/{ID_PRIVE}/profile | jq .
 **Purpose**: Alignement avec les specs transverses et validation finale.
 
 - [X] T057 Ajouter le champ `kind` à la réponse de `GET /api/v1/auth/me` dans `backend/internal/application/auth/me.go` (R-007 — non-breaking, le champ est absent en Phase 1)
-- [ ] T058 [P] Vérifier RGAA AAA sur `register-member-form.tsx`, `register-association-form.tsx`, `member-profile-form.tsx`, `association-profile-form.tsx` : aria-label, aria-describedby, role, focus-visible présents sur tous les champs et boutons
-- [ ] T059 [P] Ajouter les tests d'intégration DB pour `member_repository.go`, `association_repository.go`, `membership_repository.go` dans `backend/internal/adapters/db/` (pattern existant avec testhelper_test.go)
-- [ ] T060 Exécuter le smoke test complet `quickstart.md` : migrate up + sqlc generate + go test -race + curl des 4 endpoints principaux
-- [ ] T061 Vérifier que `audit_log` contient bien `account_created` (US1+US2) et `profile.updated` (US3) via `sqlite3 data/assolink.db "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 10;"`
+- [X] T058 [P] Vérifier RGAA AAA sur `register-member-form.tsx`, `register-association-form.tsx`, `member-profile-form.tsx`, `association-profile-form.tsx` : aria-label, aria-describedby, role, focus-visible présents sur tous les champs et boutons
+- [X] T059 [P] Ajouter les tests d'intégration DB pour `member_repository.go`, `association_repository.go`, `membership_repository.go` dans `backend/internal/adapters/db/` (pattern existant avec testhelper_test.go)
+- [X] T060 Exécuter le smoke test complet `quickstart.md` : migrate up + sqlc generate + go test -race + curl des 4 endpoints principaux
+- [X] T061 Vérifier que `audit_log` contient bien `account_created` (US1+US2) et `profile.updated` (US3) via `sqlite3 data/assolink.db "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 10;"`
 
 ---
 
