@@ -90,11 +90,12 @@ export function LoginForm() {
             type="email"
             placeholder="vous@exemple.com"
             disabled={isLoading}
+            aria-describedby={errors.email ? "email-error" : undefined}
             {...register("email")}
             className={errors.email ? "border-destructive" : ""}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>
           )}
         </div>
 
@@ -113,11 +114,12 @@ export function LoginForm() {
             type="password"
             placeholder="••••••••••••"
             disabled={isLoading}
+            aria-describedby={errors.password ? "password-error" : undefined}
             {...register("password")}
             className={errors.password ? "border-destructive" : ""}
           />
           {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
+            <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>
           )}
         </div>
 

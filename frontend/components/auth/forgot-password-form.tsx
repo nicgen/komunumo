@@ -83,11 +83,12 @@ export function ForgotPasswordForm() {
             type="email"
             placeholder="vous@exemple.com"
             disabled={isLoading}
+            aria-describedby={errors.email ? "email-error" : undefined}
             {...register("email")}
             className={errors.email ? "border-destructive" : ""}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>
           )}
         </div>
 

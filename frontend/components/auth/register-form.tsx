@@ -101,11 +101,12 @@ export function RegisterForm() {
               id="first_name"
               placeholder="Jean"
               disabled={isLoading}
+              aria-describedby={errors.first_name ? "first_name-error" : undefined}
               {...register("first_name")}
               className={errors.first_name ? "border-destructive" : ""}
             />
             {errors.first_name && (
-              <p className="text-xs text-destructive">{errors.first_name.message}</p>
+              <p id="first_name-error" className="text-xs text-destructive">{errors.first_name.message}</p>
             )}
           </div>
           <div className="space-y-2">
@@ -114,11 +115,12 @@ export function RegisterForm() {
               id="last_name"
               placeholder="Dupont"
               disabled={isLoading}
+              aria-describedby={errors.last_name ? "last_name-error" : undefined}
               {...register("last_name")}
               className={errors.last_name ? "border-destructive" : ""}
             />
             {errors.last_name && (
-              <p className="text-xs text-destructive">{errors.last_name.message}</p>
+              <p id="last_name-error" className="text-xs text-destructive">{errors.last_name.message}</p>
             )}
           </div>
         </div>
@@ -130,11 +132,12 @@ export function RegisterForm() {
             type="email"
             placeholder="vous@exemple.com"
             disabled={isLoading}
+            aria-describedby={errors.email ? "email-error" : undefined}
             {...register("email")}
             className={errors.email ? "border-destructive" : ""}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>
           )}
         </div>
 
@@ -144,11 +147,12 @@ export function RegisterForm() {
             id="date_of_birth"
             type="date"
             disabled={isLoading}
+            aria-describedby={errors.date_of_birth ? "date_of_birth-error" : undefined}
             {...register("date_of_birth")}
             className={errors.date_of_birth ? "border-destructive" : ""}
           />
           {errors.date_of_birth && (
-            <p className="text-xs text-destructive">{errors.date_of_birth.message}</p>
+            <p id="date_of_birth-error" className="text-xs text-destructive">{errors.date_of_birth.message}</p>
           )}
         </div>
 
@@ -159,13 +163,14 @@ export function RegisterForm() {
             type="password"
             placeholder="••••••••••••"
             disabled={isLoading}
+            aria-describedby={errors.password ? "password-error" : "password-hint"}
             {...register("password")}
             className={errors.password ? "border-destructive" : ""}
           />
           {errors.password ? (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
+            <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>
           ) : (
-            <p className="text-[10px] text-muted-foreground">
+            <p id="password-hint" className="text-[10px] text-muted-foreground">
               Au moins 12 caractères avec majuscules, minuscules, chiffres et caractères spéciaux.
             </p>
           )}

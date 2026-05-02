@@ -114,13 +114,14 @@ export function ResetPasswordConfirmForm({ token }: ResetPasswordConfirmFormProp
             type="password"
             placeholder="••••••••••••"
             disabled={isLoading}
+            aria-describedby={errors.new_password ? "new_password-error" : "new_password-hint"}
             {...register("new_password")}
             className={errors.new_password ? "border-destructive" : ""}
           />
           {errors.new_password ? (
-            <p className="text-xs text-destructive">{errors.new_password.message}</p>
+            <p id="new_password-error" className="text-xs text-destructive">{errors.new_password.message}</p>
           ) : (
-            <p className="text-[10px] text-muted-foreground">
+            <p id="new_password-hint" className="text-[10px] text-muted-foreground">
               Au moins 12 caractères avec majuscules, minuscules, chiffres et caractères spéciaux.
             </p>
           )}
@@ -133,11 +134,12 @@ export function ResetPasswordConfirmForm({ token }: ResetPasswordConfirmFormProp
             type="password"
             placeholder="••••••••••••"
             disabled={isLoading}
+            aria-describedby={errors.confirm_password ? "confirm_password-error" : undefined}
             {...register("confirm_password")}
             className={errors.confirm_password ? "border-destructive" : ""}
           />
           {errors.confirm_password && (
-            <p className="text-xs text-destructive">{errors.confirm_password.message}</p>
+            <p id="confirm_password-error" className="text-xs text-destructive">{errors.confirm_password.message}</p>
           )}
         </div>
 

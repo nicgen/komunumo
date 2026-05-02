@@ -286,7 +286,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   sessionCookieMaxAge,
 		HttpOnly: true,
 		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
 
@@ -341,7 +341,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 		HttpOnly: true,
 		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
 

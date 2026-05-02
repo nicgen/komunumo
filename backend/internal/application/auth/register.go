@@ -58,6 +58,10 @@ func NewRegisterService(
 // Register creates a new account. The email is sent before DB writes so that
 // a Brevo failure leaves no orphan account (spec: "pas de compte sans email envoyé").
 func (s *RegisterService) Register(ctx context.Context, ip string, in RegisterInput) error {
+	if ok, _ := s.rl.Allow(ctx, "register:"+ip); !ok {
+		return ErrRateLimited
+	}
+
 	if err := account.ValidatePassword(in.Password); err != nil {
 		return err
 	}
