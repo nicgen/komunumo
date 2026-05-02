@@ -1,0 +1,232 @@
+openapi: 3.1.0
+info:
+  title: AssoLink — Profiles endpoints (Phase 2)
+  version: 0.2.0
+
+# Extends docs/specs/03-api/openapi.yaml
+# Base URL: https://api.local.hello-there.net/v1
+
+paths:
+  /auth/register/member:
+    post:
+      tags: [auth]
+      summary: Inscrire une Personne
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, first_name, last_name, birth_date]
+              properties:
+                email:        { type: string, format: email }
+                password:     { type: string, minLength: 12 }
+                first_name:   { type: string, minLength: 2 }
+                last_name:    { type: string, minLength: 2 }
+                birth_date:   { type: string, format: date, description: "YYYY-MM-DD, âge >= 18 ans" }
+      responses:
+        '201': { description: Compte créé en pending_verification }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '422': { description: "Règle métier violée (ex: âge < 18 ans)" }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/register/association:
+    post:
+      tags: [auth]
+      summary: Inscrire une Association
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, legal_name, postal_code, first_name, last_name, birth_date]
+              properties:
+                email:       { type: string, format: email }
+                password:    { type: string, minLength: 12 }
+                legal_name:  { type: string, minLength: 2 }
+                postal_code: { type: string, pattern: '^\d{5}$' }
+                siren:       { type: string, pattern: '^\d{9}$', nullable: true }
+                rna:         { type: string, pattern: '^W\d{9}$', nullable: true }
+                first_name:  { type: string, minLength: 2 }
+                last_name:   { type: string, minLength: 2 }
+                birth_date:  { type: string, format: date }
+      responses:
+        '201': { description: Compte Association créé en pending_verification }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '422': { description: "SIREN/RNA invalide ou âge < 18 ans" }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /me/profile:
+    get:
+      tags: [accounts]
+      summary: Profil complet du compte connecté
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Profil member ou association selon kind
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MemberProfile'
+                  - $ref: '#/components/schemas/AssociationProfile'
+                discriminator:
+                  propertyName: kind
+        '401': { description: Non authentifié }
+
+    patch:
+      tags: [accounts]
+      summary: Mettre à jour son profil
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/MemberProfilePatch'
+                - $ref: '#/components/schemas/AssociationProfilePatch'
+      responses:
+        '200': { description: Profil mis à jour }
+        '401': { description: Non authentifié }
+        '422': { description: Validation échouée }
+
+  /accounts/{accountId}/profile:
+    get:
+      tags: [accounts]
+      summary: Profil public d'un compte (visibilité respectée)
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Profil public (birth_date absent)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MemberProfilePublic'
+                  - $ref: '#/components/schemas/AssociationProfilePublic'
+        '404': { description: Profil introuvable ou privé }
+
+  /me/avatar:
+    post:
+      tags: [accounts]
+      summary: Upload avatar (≤ 2 Mo, JPEG/PNG/WebP)
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: URL de l'avatar stocké
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avatar_url: { type: string }
+        '400': { description: "Fichier invalide (format ou taille)" }
+        '401': { description: Non authentifié }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+
+  schemas:
+    MemberProfile:
+      type: object
+      properties:
+        kind:        { type: string, enum: [member] }
+        account_id:  { type: string }
+        email:       { type: string }
+        status:      { type: string, enum: [pending_verification, active, suspended] }
+        first_name:  { type: string }
+        last_name:   { type: string }
+        birth_date:  { type: string, format: date }
+        nickname:    { type: string, nullable: true }
+        about_me:    { type: string, nullable: true }
+        avatar_url:  { type: string, nullable: true }
+        visibility:  { type: string, enum: [public, members_only, private] }
+
+    AssociationProfile:
+      type: object
+      properties:
+        kind:        { type: string, enum: [association] }
+        account_id:  { type: string }
+        email:       { type: string }
+        status:      { type: string, enum: [pending_verification, active, suspended] }
+        legal_name:  { type: string }
+        siren:       { type: string, nullable: true }
+        rna:         { type: string, nullable: true }
+        postal_code: { type: string }
+        about:       { type: string, nullable: true }
+        logo_url:    { type: string, nullable: true }
+        visibility:  { type: string, enum: [public, members_only, private] }
+
+    MemberProfilePublic:
+      type: object
+      properties:
+        kind:       { type: string, enum: [member] }
+        account_id: { type: string }
+        first_name: { type: string }
+        last_name:  { type: string }
+        nickname:   { type: string, nullable: true }
+        about_me:   { type: string, nullable: true }
+        avatar_url: { type: string, nullable: true }
+
+    AssociationProfilePublic:
+      type: object
+      properties:
+        kind:        { type: string, enum: [association] }
+        account_id:  { type: string }
+        legal_name:  { type: string }
+        postal_code: { type: string }
+        about:       { type: string, nullable: true }
+        logo_url:    { type: string, nullable: true }
+
+    MemberProfilePatch:
+      type: object
+      properties:
+        nickname:   { type: string, nullable: true }
+        about_me:   { type: string, nullable: true, maxLength: 500 }
+        visibility: { type: string, enum: [public, members_only, private] }
+
+    AssociationProfilePatch:
+      type: object
+      properties:
+        about:      { type: string, nullable: true, maxLength: 2000 }
+        visibility: { type: string, enum: [public, members_only, private] }
+        postal_code: { type: string, pattern: '^\d{5}$' }
+
+  responses:
+    ValidationError:
+      description: Validation échouée
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+    RateLimited:
+      description: Trop de tentatives
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }

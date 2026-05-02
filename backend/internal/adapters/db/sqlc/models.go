@@ -14,12 +14,22 @@ type Account struct {
 	EmailCanonical string
 	PasswordHash   string
 	Status         string
-	FirstName      string
-	LastName       string
-	DateOfBirth    string
+	Kind           string
 	CreatedAt      string
 	UpdatedAt      string
 	LastLoginAt    sql.NullString
+	DeletedAt      sql.NullString
+}
+
+type Association struct {
+	AccountID  string
+	LegalName  string
+	Siren      sql.NullString
+	Rna        sql.NullString
+	PostalCode string
+	About      sql.NullString
+	LogoPath   sql.NullString
+	Visibility string
 }
 
 type AuditLog struct {
@@ -40,6 +50,26 @@ type EmailVerification struct {
 	CreatedAt  string
 	ExpiresAt  string
 	ConsumedAt sql.NullString
+}
+
+type Member struct {
+	AccountID  string
+	FirstName  string
+	LastName   string
+	BirthDate  string
+	Nickname   sql.NullString
+	AboutMe    sql.NullString
+	AvatarPath sql.NullString
+	Visibility string
+}
+
+type Membership struct {
+	ID                   string
+	MemberAccountID      string
+	AssociationAccountID string
+	Role                 string
+	Status               string
+	JoinedAt             string
 }
 
 type PasswordReset struct {

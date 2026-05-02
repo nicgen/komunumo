@@ -88,6 +88,6 @@ func (s *ResendVerificationService) Resend(ctx context.Context, in ResendVerific
 			return err
 		}
 
-		return s.email.SendVerification(ctx, acc.Email, acc.FirstName, rawToken)
+		return s.email.SendVerification(ctx, acc.Email, "", rawToken)
 	})
 }

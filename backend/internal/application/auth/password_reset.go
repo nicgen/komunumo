@@ -72,7 +72,7 @@ func (s *PasswordResetRequestService) Request(ctx context.Context, in PasswordRe
 	tokenHash := s.tokenGen.HashToken(raw)
 	tok := token.New(s.tokenGen.NewID(), acc.ID, token.KindPasswordReset, tokenHash, now, token.PasswordResetTTL)
 
-	if err := s.email.SendPasswordReset(ctx, acc.Email, acc.FirstName, raw); err != nil {
+	if err := s.email.SendPasswordReset(ctx, acc.Email, "", raw); err != nil {
 		return err
 	}
 
@@ -158,7 +158,7 @@ func (s *PasswordResetConfirmService) Confirm(ctx context.Context, in PasswordRe
 		return account.ErrAccountNotFound
 	}
 
-	if err := s.email.SendPasswordChanged(ctx, acc.Email, acc.FirstName); err != nil {
+	if err := s.email.SendPasswordChanged(ctx, acc.Email, ""); err != nil {
 		return err
 	}
 

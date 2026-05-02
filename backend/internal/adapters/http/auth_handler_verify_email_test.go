@@ -29,14 +29,13 @@ func newVerifyEmailHandler(t *testing.T) (*httpadapter.AuthHandler, *fakes.Accou
 	uow := fakes.NewUnitOfWork()
 
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditLog, tokenGen, clk, uow)
-	handler := httpadapter.NewAuthHandler(nil, verifySvc, nil, nil, nil, nil, nil, nil)
+	handler := httpadapter.NewAuthHandler(verifySvc, nil, nil, nil, nil, nil, nil)
 	return handler, accounts, tokens
 }
 
 func seedVerifyScenario(t *testing.T, accounts *fakes.AccountRepository, tokens *fakes.TokenRepository, now time.Time) (rawToken string) {
 	t.Helper()
-	dob := now.AddDate(-20, 0, 0)
-	a, err := account.New("acc1", "lea@example.com", "Léa", "Dupont", dob, now)
+	a, err := account.New("acc1", "lea@example.com", now)
 	require.NoError(t, err)
 	require.NoError(t, accounts.Create(context.Background(), a))
 
@@ -108,7 +107,7 @@ func TestVerifyEmailHandler_ExpiredToken_410(t *testing.T) {
 	rawToken := seedVerifyScenario(t, accounts, tokens, now)
 
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditLog, tokenGen, clk, uow)
-	handler := httpadapter.NewAuthHandler(nil, verifySvc, nil, nil, nil, nil, nil, nil)
+	handler := httpadapter.NewAuthHandler(verifySvc, nil, nil, nil, nil, nil, nil)
 
 	body := strings.NewReader(`{"token":"` + rawToken + `"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify-email", body)

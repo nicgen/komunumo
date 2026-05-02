@@ -20,12 +20,14 @@ func openTestDB(t *testing.T) *sql.DB {
 	}
 	t.Cleanup(func() { conn.Close() })
 
-	schema, err := os.ReadFile("migrations/0001_init_auth.up.sql")
-	if err != nil {
-		t.Fatalf("read migration: %v", err)
-	}
-	if _, err := conn.ExecContext(context.Background(), string(schema)); err != nil {
-		t.Fatalf("apply migration: %v", err)
+	for _, f := range []string{"migrations/0001_init_auth.up.sql", "migrations/0002_profiles.up.sql"} {
+		schema, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatalf("read migration %s: %v", f, err)
+		}
+		if _, err := conn.ExecContext(context.Background(), string(schema)); err != nil {
+			t.Fatalf("apply migration %s: %v", f, err)
+		}
 	}
 	return conn
 }

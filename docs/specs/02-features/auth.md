@@ -2,7 +2,7 @@
 
 - Status : `Approved`
 - Owner : nic
-- Last updated : 2026-04-26
+- Last updated : 2026-05-02
 - Linked ADRs : ADR-0004, ADR-0009
 
 ## Objectif
@@ -47,7 +47,8 @@ Feature: Inscription
     And aucun nouveau compte n'est créé
     And un email "tentative d'inscription sur compte existant" est envoyé
 
-  Scenario: Inscription d'une Association
+  # [REPORTÉ — Phase 2] Nécessite les tables `associations` et `memberships` (migration 0002).
+  Scenario: Inscription d'une Association (Phase 2 — Module Organisation)
     Given un visiteur sur /register/association
     When il saisit nom moral, email association, optionnellement SIREN, code postal, mot de passe valide
     Then un compte Association est créé en status "pending_verification"
@@ -59,7 +60,7 @@ Feature: Connexion
     Given un compte vérifié existe avec email "anne@example.org" et mot de passe correct
     When l'utilisateur soumet ces credentials sur /login
     Then une session est créée en base
-    And un cookie session_id (HttpOnly, Secure, SameSite=Lax, Domain=.local.hello-there.net) est posé
+    And un cookie session_id (HttpOnly, Secure, SameSite=Strict, Path=/) est posé
     And l'utilisateur est redirigé vers /home
     And l'audit log enregistre "login_success"
 
@@ -124,12 +125,13 @@ Feature: Réinitialisation de mot de passe
 
 ## Modèle de données impacté
 
-Tables : `accounts`, `members`, `associations`, `memberships`, `sessions`, `email_verifications`, `password_resets`, `audit_log`.
+- **Phase 1** : `accounts`, `sessions`, `email_verifications`, `password_resets`, `audit_log`.
+- **Phase 2** : `members`, `associations`, `memberships` (migration 0002 — Module Organisation).
 
 ## Endpoints API impactés
 
 - `POST /api/v1/auth/register/member`
-- `POST /api/v1/auth/register/association`
+- `POST /api/v1/auth/register/association` — **Phase 2** (Module Organisation, dépendance tables `associations`/`memberships`)
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
 - `POST /api/v1/auth/verify-email`
@@ -160,10 +162,11 @@ Tables : `accounts`, `members`, `associations`, `memberships`, `sessions`, `emai
 
 ## Hors scope
 
-- OAuth/OIDC providers (Google, Apple) - V2.
-- 2FA TOTP - V2.
-- Magic links - V2.
-- Email change avec re-vérification - V2 (édition profil basique en V1).
+- Inscription Association (`POST /api/v1/auth/register/association`) — reporté Phase 2, voir Module Organisation.
+- OAuth/OIDC providers (Google, Apple) — V2.
+- 2FA TOTP — V2.
+- Magic links — V2.
+- Email change avec re-vérification — V2 (édition profil basique en V1).
 
 ## Open questions
 

@@ -39,18 +39,17 @@ func newPasswordResetHandler(t *testing.T) (
 	pwResetReqSvc := auth.NewPasswordResetRequestService(accounts, tokens, auditLog, emails, tokenGen, clk, rl, uow)
 	pwResetConfSvc := auth.NewPasswordResetConfirmService(accounts, tokens, sessions, auditLog, emails, hasher, tokenGen, clk, uow)
 
-	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, nil, pwResetReqSvc, pwResetConfSvc, nil)
+	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, pwResetReqSvc, pwResetConfSvc, nil)
 	return handler, accounts, tokens, emails
 }
 
 func seedVerifiedAccountForHandler(t *testing.T, accounts *fakes.AccountRepository) *account.Account {
 	t.Helper()
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	acc, err := account.New("acc-pr", "anne@example.com", "Anne", "Dupont", dob, now)
+	acc, err := account.New("acc-pr", "anne@example.com", now)
 	require.NoError(t, err)
 	acc.PasswordHash = "hash:OldPass123!"
-	acc.Status = account.StatusVerified
+	acc.Status = account.StatusActive
 	require.NoError(t, accounts.Create(t.Context(), acc))
 	return acc
 }

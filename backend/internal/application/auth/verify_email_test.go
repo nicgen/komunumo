@@ -18,8 +18,7 @@ import (
 func seedPendingAccount(t *testing.T, accounts *fakes.AccountRepository) *account.Account {
 	t.Helper()
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	dob := now.AddDate(-20, 0, 0)
-	a, err := account.New("acc1", "lea@example.com", "Léa", "Dupont", dob, now)
+	a, err := account.New("acc1", "lea@example.com", now)
 	require.NoError(t, err)
 	require.NoError(t, accounts.Create(context.Background(), a))
 	return a
@@ -53,7 +52,7 @@ func TestVerifyEmail_Nominal(t *testing.T) {
 	require.NoError(t, err)
 
 	updated, _ := accounts.FindByID(context.Background(), a.ID)
-	assert.Equal(t, account.StatusVerified, updated.Status)
+	assert.Equal(t, account.StatusActive, updated.Status)
 
 	ev := auditLog.LastOfType(audit.EventAccountEmailVerified)
 	require.NotNil(t, ev)
