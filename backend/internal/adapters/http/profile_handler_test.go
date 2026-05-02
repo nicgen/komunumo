@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -104,4 +105,54 @@ func TestHandleGetMyProfile_Unauthorized(t *testing.T) {
 	h.HandleGetMyProfile(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+}
+func TestHandleGetPublicProfile_Public(t *testing.T) {
+	h, accounts, members, _, _ := newProfileHandler(t)
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	acc, _ := account.New("acc-1", "lea@example.com", now)
+	acc.Kind = account.KindMember
+	_ = accounts.Create(context.Background(), acc)
+	m, _ := member.New("acc-1", "Léa", "Martin", "2000-01-15", now)
+	m.Visibility = member.VisibilityPublic
+	_ = members.Create(context.Background(), m)
+
+	req := httptest.NewRequest("GET", "/api/v1/accounts/acc-1/profile", nil)
+	// Manual injection of chi URL param for testing without full router
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("accountId", "acc-1")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	rr := httptest.NewRecorder()
+
+	h.HandleGetPublicProfile(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	var resp profile.ProfileOutput
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
+	assert.Equal(t, "Léa", resp.FirstName)
+	assert.Empty(t, resp.BirthDate)
+}
+
+func TestHandleGetPublicProfile_Private(t *testing.T) {
+	h, accounts, members, _, _ := newProfileHandler(t)
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	acc, _ := account.New("acc-1", "lea@example.com", now)
+	acc.Kind = account.KindMember
+	_ = accounts.Create(context.Background(), acc)
+	m, _ := member.New("acc-1", "Léa", "Martin", "2000-01-15", now)
+	m.Visibility = member.VisibilityPrivate
+	_ = members.Create(context.Background(), m)
+
+	req := httptest.NewRequest("GET", "/api/v1/accounts/acc-1/profile", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("accountId", "acc-1")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	rr := httptest.NewRecorder()
+
+	h.HandleGetPublicProfile(rr, req)
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
 }

@@ -2,12 +2,16 @@ package profile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"komunumo/backend/internal/domain/account"
+	"komunumo/backend/internal/domain/member"
 	"komunumo/backend/internal/ports"
 )
+
+var ErrNotFound = errors.New("profile not found")
 
 type ProfileOutput struct {
 	AccountID   string    `json:"account_id"`
@@ -103,6 +107,63 @@ func (s *GetProfileService) GetMyProfile(ctx context.Context, sessionID string) 
 			out.About = asso.About
 			out.LogoPath = asso.LogoPath
 			out.Visibility = string(asso.Visibility)
+		}
+	}
+
+	return out, nil
+}
+
+func (s *GetProfileService) GetPublicProfile(ctx context.Context, accountID string, viewerSessionID string) (*ProfileOutput, error) {
+	acc, err := s.accounts.FindByID(ctx, accountID)
+	if err != nil || acc == nil {
+		return nil, ErrNotFound
+	}
+
+	out := &ProfileOutput{
+		AccountID: acc.ID,
+		Kind:      string(acc.Kind),
+		CreatedAt: acc.CreatedAt,
+	}
+
+	var visibility string
+	if acc.Kind == account.KindMember {
+		m, err := s.members.FindByAccountID(ctx, acc.ID)
+		if err != nil || m == nil {
+			return nil, ErrNotFound
+		}
+		visibility = string(m.Visibility)
+		out.FirstName = m.FirstName
+		out.LastName = m.LastName
+		out.Nickname = m.Nickname
+		out.AboutMe = m.AboutMe
+		out.AvatarPath = m.AvatarPath
+	} else if acc.Kind == account.KindAssociation {
+		asso, err := s.associations.FindByAccountID(ctx, acc.ID)
+		if err != nil || asso == nil {
+			return nil, ErrNotFound
+		}
+		visibility = string(asso.Visibility)
+		out.LegalName = asso.LegalName
+		out.SIREN = asso.SIREN
+		out.RNA = asso.RNA
+		out.PostalCode = asso.PostalCode
+		out.About = asso.About
+		out.LogoPath = asso.LogoPath
+	}
+	out.Visibility = visibility
+
+	// Visibility check
+	if visibility == string(member.VisibilityPrivate) {
+		return nil, ErrNotFound
+	}
+
+	if visibility == string(member.VisibilityMembersOnly) {
+		if viewerSessionID == "" {
+			return nil, ErrNotFound
+		}
+		_, err := s.sessions.FindByID(ctx, viewerSessionID, s.clock.Now())
+		if err != nil {
+			return nil, ErrNotFound
 		}
 	}
 

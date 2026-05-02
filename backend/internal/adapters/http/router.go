@@ -26,6 +26,9 @@ func NewRouter(auth *AuthHandler, register *RegisterHandler, profile *ProfileHan
 		r.Post("/register/association", register.HandleRegisterAssociation)
 	})
 
+	// Public profile endpoint (with optional auth for members_only visibility)
+	r.With(middleware.OptionalAuth(sessions, clk)).Get("/api/v1/accounts/{accountId}/profile", profile.HandleGetPublicProfile)
+
 	// Protected routes (US3+)
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.CSRF)

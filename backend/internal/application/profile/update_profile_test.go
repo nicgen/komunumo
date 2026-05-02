@@ -24,8 +24,9 @@ func newUpdateProfileService(t *testing.T) (*profile.UpdateProfileService, *fake
 	sessions := fakes.NewSessionRepository()
 	audit := fakes.NewAuditRepository()
 	clk := fakes.NewClock(time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC))
+	tokenGen := fakes.NewTokenGenerator()
 
-	svc := profile.NewUpdateProfileService(accounts, members, associations, sessions, audit, clk)
+	svc := profile.NewUpdateProfileService(accounts, members, associations, sessions, audit, clk, tokenGen)
 	return svc, accounts, members, associations, sessions, audit
 }
 

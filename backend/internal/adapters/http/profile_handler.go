@@ -2,8 +2,10 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"komunumo/backend/internal/adapters/http/middleware"
 	"komunumo/backend/internal/application/profile"
 )
@@ -92,4 +94,27 @@ func (h *ProfileHandler) HandleUploadAvatar(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"avatar_path": path})
+}
+
+func (h *ProfileHandler) HandleGetPublicProfile(w http.ResponseWriter, r *http.Request) {
+	accountId := chi.URLParam(r, "accountId")
+	if accountId == "" {
+		jsonError(w, "compte non spécifié", http.StatusBadRequest)
+		return
+	}
+
+	viewerSessionID, _ := sessionIDFromContext(r)
+
+	out, err := h.getSvc.GetPublicProfile(r.Context(), accountId, viewerSessionID)
+	if err != nil {
+		if errors.Is(err, profile.ErrNotFound) {
+			jsonError(w, "profil non trouvé", http.StatusNotFound)
+			return
+		}
+		jsonError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(out)
 }

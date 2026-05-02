@@ -22,8 +22,9 @@ func newGetProfileService(t *testing.T) (*profile.GetProfileService, *fakes.Acco
 	members := fakes.NewMemberRepository()
 	associations := fakes.NewAssociationRepository()
 	sessions := fakes.NewSessionRepository()
+	clk := fakes.NewClock(time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC))
 
-	svc := profile.NewGetProfileService(accounts, members, associations, sessions)
+	svc := profile.NewGetProfileService(accounts, members, associations, sessions, clk)
 	return svc, accounts, members, associations, sessions
 }
 
@@ -90,4 +91,79 @@ func TestGetMyProfile_SessionInvalid(t *testing.T) {
 	_, err := svc.GetMyProfile(context.Background(), "invalid")
 
 	assert.Error(t, err) // Should be ErrUnauthorized or similar
+}
+func TestGetPublicProfile_Public(t *testing.T) {
+	svc, accounts, members, _, _ := newGetProfileService(t)
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	acc, _ := account.New("acc-1", "lea@example.com", now)
+	acc.Kind = account.KindMember
+	_ = accounts.Create(context.Background(), acc)
+
+	m, _ := member.New("acc-1", "Léa", "Martin", "2000-01-15", now)
+	m.Visibility = member.VisibilityPublic
+	_ = members.Create(context.Background(), m)
+
+	out, err := svc.GetPublicProfile(context.Background(), "acc-1", "")
+
+	require.NoError(t, err)
+	assert.Equal(t, "acc-1", out.AccountID)
+	assert.Empty(t, out.BirthDate) // Protected PII
+	assert.Equal(t, "Léa", out.FirstName)
+}
+
+func TestGetPublicProfile_Private(t *testing.T) {
+	svc, accounts, members, _, _ := newGetProfileService(t)
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	acc, _ := account.New("acc-1", "lea@example.com", now)
+	acc.Kind = account.KindMember
+	_ = accounts.Create(context.Background(), acc)
+
+	m, _ := member.New("acc-1", "Léa", "Martin", "2000-01-15", now)
+	m.Visibility = member.VisibilityPrivate
+	_ = members.Create(context.Background(), m)
+
+	_, err := svc.GetPublicProfile(context.Background(), "acc-1", "")
+
+	assert.ErrorIs(t, err, profile.ErrNotFound)
+}
+
+func TestGetPublicProfile_MembersOnly_WithoutSession(t *testing.T) {
+	svc, accounts, members, _, _ := newGetProfileService(t)
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	acc, _ := account.New("acc-1", "lea@example.com", now)
+	acc.Kind = account.KindMember
+	_ = accounts.Create(context.Background(), acc)
+
+	m, _ := member.New("acc-1", "Léa", "Martin", "2000-01-15", now)
+	m.Visibility = member.VisibilityMembersOnly
+	_ = members.Create(context.Background(), m)
+
+	_, err := svc.GetPublicProfile(context.Background(), "acc-1", "")
+
+	assert.ErrorIs(t, err, profile.ErrNotFound)
+}
+
+func TestGetPublicProfile_MembersOnly_WithSession(t *testing.T) {
+	svc, accounts, members, _, sessions := newGetProfileService(t)
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	acc, _ := account.New("acc-1", "lea@example.com", now)
+	acc.Kind = account.KindMember
+	_ = accounts.Create(context.Background(), acc)
+
+	m, _ := member.New("acc-1", "Léa", "Martin", "2000-01-15", now)
+	m.Visibility = member.VisibilityMembersOnly
+	_ = members.Create(context.Background(), m)
+
+	sess := &session.Session{ID: "sess-1", AccountID: "viewer", ExpiresAt: now.Add(1 * time.Hour)}
+	_ = sessions.Create(context.Background(), sess)
+
+	out, err := svc.GetPublicProfile(context.Background(), "acc-1", "sess-1")
+
+	require.NoError(t, err)
+	assert.Equal(t, "acc-1", out.AccountID)
+	assert.Empty(t, out.BirthDate)
 }
