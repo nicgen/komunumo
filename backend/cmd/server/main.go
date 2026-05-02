@@ -17,8 +17,10 @@ import (
 	"komunumo/backend/internal/adapters/log"
 	"komunumo/backend/internal/adapters/password"
 	"komunumo/backend/internal/adapters/ratelimit"
+	"komunumo/backend/internal/adapters/storage"
 	"komunumo/backend/internal/adapters/tokengen"
 	"komunumo/backend/internal/application/auth"
+	"komunumo/backend/internal/application/profile"
 	"komunumo/backend/internal/ports"
 	"github.com/joho/godotenv"
 )
@@ -88,9 +90,15 @@ func run(logger *slog.Logger) error {
 	membershipRepo := db.NewMembershipRepository(conn)
 	registerAssociationSvc := auth.NewRegisterAssociationService(accounts, associationRepo, memberRepo, membershipRepo, auditRepo, emailSender, hasher, tokenGen, tokens, clk, rl, uow)
 
+	storage := storage.NewLocalFileStore("data/uploads", "/uploads")
+	getProfileSvc := profile.NewGetProfileService(accounts, memberRepo, associationRepo, tokens, clk)
+	updateProfileSvc := profile.NewUpdateProfileService(accounts, memberRepo, associationRepo, tokens, auditRepo, clk, tokenGen)
+	uploadAvatarSvc := profile.NewUploadAvatarService(accounts, memberRepo, tokens, storage, clk)
+
 	authHandler := httpadapter.NewAuthHandler(verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc)
 	registerHandler := httpadapter.NewRegisterHandler(registerMemberSvc, registerAssociationSvc)
-	router := httpadapter.NewRouter(authHandler, registerHandler)
+	profileHandler := httpadapter.NewProfileHandler(getProfileSvc, updateProfileSvc, uploadAvatarSvc)
+	router := httpadapter.NewRouter(authHandler, registerHandler, profileHandler, tokens, clk)
 
 	srv := &http.Server{
 		Addr:              addr,
