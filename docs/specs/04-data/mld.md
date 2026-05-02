@@ -17,8 +17,8 @@ Conventions :
 | id | TEXT (UUID) | PK |
 | email | TEXT | NOT NULL UNIQUE |
 | password_hash | TEXT | NOT NULL |
-| status | TEXT | NOT NULL CHECK IN ('pending_verification','active','suspended','deleted') |
-| kind | TEXT | NOT NULL CHECK IN ('member','association') |
+| status | TEXT | NOT NULL CHECK IN ('pending_verification','active','suspended','deleted') — Phase 2 : renommer verified→active, disabled→suspended |
+| kind | TEXT | NOT NULL CHECK IN ('member','association') — ajouté migration 0002 |
 | created_at | INTEGER | NOT NULL |
 | updated_at | INTEGER | NOT NULL |
 | deleted_at | INTEGER | NULL |
@@ -36,7 +36,7 @@ Index : `idx_accounts_email_lower` sur `lower(email)`, `idx_accounts_status` sur
 | nickname | TEXT | NULL |
 | about_me | TEXT | NULL |
 | avatar_path | TEXT | NULL |
-| visibility | TEXT | NOT NULL CHECK IN ('public','private') |
+| visibility | TEXT | NOT NULL CHECK IN ('public','members_only','private') |
 
 ### `associations`
 
@@ -49,7 +49,7 @@ Index : `idx_accounts_email_lower` sur `lower(email)`, `idx_accounts_status` sur
 | postal_code | TEXT | NOT NULL |
 | about | TEXT | NULL |
 | logo_path | TEXT | NULL |
-| visibility | TEXT | NOT NULL CHECK IN ('public','private') |
+| visibility | TEXT | NOT NULL CHECK IN ('public','members_only','private') |
 
 Index : `idx_associations_postal_code` sur `postal_code` (filtre carte V1).
 
