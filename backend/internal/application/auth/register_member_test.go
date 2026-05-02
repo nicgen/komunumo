@@ -58,8 +58,10 @@ func TestRegisterMember_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check account
-	acc, err := accounts.FindByEmail(context.Background(), "lea@example.com")
+	canonical, _ := account.CanonicalizeEmail("lea@example.com")
+	acc, err := accounts.FindByEmailCanonical(context.Background(), canonical)
 	require.NoError(t, err)
+	assert.NotNil(t, acc)
 	assert.Equal(t, account.KindMember, acc.Kind)
 	assert.Equal(t, account.StatusPendingVerification, acc.Status)
 
@@ -71,7 +73,8 @@ func TestRegisterMember_Success(t *testing.T) {
 
 	// Check audit and email
 	assert.True(t, auditLog.ContainsType("account.created"))
-	assert.Equal(t, 1, emails.SentCount())
+	assert.Equal(t, 1, len(emails.Calls))
+	assert.Equal(t, "SendVerification", emails.Calls[0].Method)
 }
 
 func TestRegisterMember_TooYoung(t *testing.T) {

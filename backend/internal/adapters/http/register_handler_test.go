@@ -48,6 +48,7 @@ func TestRegisterMemberHandler_Success_201(t *testing.T) {
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/member", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
 	rr := httptest.NewRecorder()
 
 	handler.HandleRegisterMember(rr, req)
@@ -72,6 +73,7 @@ func TestRegisterMemberHandler_TooYoung_422(t *testing.T) {
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/member", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
 	rr := httptest.NewRecorder()
 
 	handler.HandleRegisterMember(rr, req)
@@ -92,6 +94,7 @@ func TestRegisterMemberHandler_RateLimited_429(t *testing.T) {
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/member", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
 	rr := httptest.NewRecorder()
 
 	handler.HandleRegisterMember(rr, req)
@@ -104,6 +107,7 @@ func TestRegisterMemberHandler_InvalidJSON_400(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/member", bytes.NewReader([]byte("not json")))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
 	rr := httptest.NewRecorder()
 
 	handler.HandleRegisterMember(rr, req)

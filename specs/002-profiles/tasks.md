@@ -20,13 +20,13 @@
 
 **Purpose**: Poser les fichiers SQL (migration + queries) qui débloquent le reste. Aucun code Go ni TypeScript ici.
 
-- [ ] T001 Écrire `backend/internal/adapters/db/migrations/0002_profiles.up.sql` (recréation accounts, création members/associations/memberships, migration PII, index — cf. data-model.md §Migration 0002)
-- [ ] T002 Écrire `backend/internal/adapters/db/migrations/0002_profiles.down.sql` (rollback : DROP membres/associations/memberships, recréation accounts Phase 1 avec colonnes PII)
-- [ ] T003 Écrire `backend/internal/adapters/db/queries/members.sql` (-- name: CreateMember, GetMemberByAccountID, UpdateMember)
-- [ ] T004 [P] Écrire `backend/internal/adapters/db/queries/associations.sql` (-- name: CreateAssociation, GetAssociationByAccountID, UpdateAssociation)
-- [ ] T005 [P] Écrire `backend/internal/adapters/db/queries/memberships.sql` (-- name: CreateMembership, GetMembershipByAccountIDs)
-- [ ] T006 Régénérer le code sqlc : `cd backend && sqlc generate` (dépend de T003–T005)
-- [ ] T007 Appliquer la migration localement : `migrate -database "sqlite3://./backend/data/assolink.db" -path backend/internal/adapters/db/migrations up` — vérifier `.tables` + `SELECT count(*) FROM members`
+- [X] T001 Écrire `backend/internal/adapters/db/migrations/0002_profiles.up.sql` (recréation accounts, création members/associations/memberships, migration PII, index — cf. data-model.md §Migration 0002)
+- [X] T002 Écrire `backend/internal/adapters/db/migrations/0002_profiles.down.sql` (rollback : DROP membres/associations/memberships, recréation accounts Phase 1 avec colonnes PII)
+- [X] T003 Écrire `backend/internal/adapters/db/queries/members.sql` (-- name: CreateMember, GetMemberByAccountID, UpdateMember)
+- [X] T004 [P] Écrire `backend/internal/adapters/db/queries/associations.sql` (-- name: CreateAssociation, GetAssociationByAccountID, UpdateAssociation)
+- [X] T005 [P] Écrire `backend/internal/adapters/db/queries/memberships.sql` (-- name: CreateMembership, GetMembershipByAccountIDs)
+- [X] T006 Régénérer le code sqlc : `cd backend && sqlc generate` (dépend de T003–T005)
+- [X] T007 Appliquer la migration localement : `migrate -database "sqlite3://./backend/data/assolink.db" -path backend/internal/adapters/db/migrations up` — vérifier `.tables` + `SELECT count(*) FROM members`
 
 **Checkpoint**: tables créées, sqlc généré → code Go compilable.
 
@@ -38,23 +38,23 @@
 
 **⚠️ CRITIQUE**: Aucune US ne peut démarrer avant la fin de cette phase.
 
-- [ ] T008 Mettre à jour `backend/internal/domain/account/account.go` : ajouter types `Kind` (member/association) et `Status` (active/suspended/deleted + pending_verification) ; mise à jour de `Account` struct (supprimer FirstName/LastName/DateOfBirth, ajouter Kind)
-- [ ] T009 [P] Écrire les tests `backend/internal/domain/member/member_test.go` : NewMember (âge ≥ 18 ans OK, < 18 ans → erreur), about_me > 500 → erreur, FirstName vide → erreur
-- [ ] T010 [P] Créer `backend/internal/domain/member/member.go` : struct Member, func NewMember(accountID, firstName, lastName, birthDate string) (*Member, error) + invariants âge + about_me (dépend de T009 — tests must fail first)
-- [ ] T011 [P] Écrire les tests `backend/internal/domain/association/association_test.go` : ValidateSIREN (9 chiffres OK, 8 chiffres KO), ValidateRNA (W+9 OK, mauvais format KO), about > 2000 → erreur
-- [ ] T012 [P] Créer `backend/internal/domain/association/association.go` : struct Association, func NewAssociation(...) + ValidateSIREN/ValidateRNA (dépend de T011)
-- [ ] T013 Ajouter `backend/internal/ports/member_repository.go` : interface MemberRepository { Create, FindByAccountID, Update }
-- [ ] T014 [P] Ajouter `backend/internal/ports/association_repository.go` : interface AssociationRepository { Create, FindByAccountID, Update }
-- [ ] T015 [P] Ajouter `backend/internal/ports/membership_repository.go` : interface MembershipRepository { Create, FindByAccountIDs }
-- [ ] T016 [P] Ajouter `backend/internal/ports/file_store.go` : interface FileStore { StoreAvatar, AvatarURL } (cf. contracts/ports.md)
-- [ ] T017 Étendre `backend/internal/ports/account_repository.go` : ajouter FindByID et UpdateKindAndStatus à l'interface AccountRepository
-- [ ] T018 [P] Créer les fakes `backend/internal/ports/fakes/member_repository.go`, `association_repository.go`, `membership_repository.go`, `file_store.go` (fake en mémoire, un fichier par interface)
-- [ ] T019 Mettre à jour `backend/internal/ports/fakes/account_repository.go` : implémenter FindByID et UpdateKindAndStatus
-- [ ] T020 Créer `backend/internal/adapters/db/member_repository.go` : implémentation sqlc de MemberRepository (dépend de T006, T013)
-- [ ] T021 [P] Créer `backend/internal/adapters/db/association_repository.go` : implémentation sqlc de AssociationRepository (dépend de T006, T014)
-- [ ] T022 [P] Créer `backend/internal/adapters/db/membership_repository.go` : implémentation sqlc de MembershipRepository (dépend de T006, T015)
-- [ ] T023 Étendre `backend/internal/adapters/db/account_repository.go` : implémenter FindByID et UpdateKindAndStatus (dépend de T017)
-- [ ] T024 Créer `backend/internal/adapters/storage/local_file_store.go` : implémentation FileStore — StoreAvatar écrit dans `data/uploads/avatars/{accountID}/{uuid}.{ext}`, AvatarURL retourne `/uploads/avatars/…` (dépend de T016)
+- [X] T008 Mettre à jour `backend/internal/domain/account/account.go` : ajouter types `Kind` (member/association) et `Status` (active/suspended/deleted + pending_verification) ; mise à jour de `Account` struct (supprimer FirstName/LastName/DateOfBirth, ajouter Kind)
+- [X] T009 [P] Écrire les tests `backend/internal/domain/member/member_test.go` : NewMember (âge ≥ 18 ans OK, < 18 ans → erreur), about_me > 500 → erreur, FirstName vide → erreur
+- [X] T010 [P] Créer `backend/internal/domain/member/member.go` : struct Member, func NewMember(accountID, firstName, lastName, birthDate string) (*Member, error) + invariants âge + about_me (dépend de T009 — tests must fail first)
+- [X] T011 [P] Écrire les tests `backend/internal/domain/association/association_test.go` : ValidateSIREN (9 chiffres OK, 8 chiffres KO), ValidateRNA (W+9 OK, mauvais format KO), about > 2000 → erreur
+- [X] T012 [P] Créer `backend/internal/domain/association/association.go` : struct Association, func NewAssociation(...) + ValidateSIREN/ValidateRNA (dépend de T011)
+- [X] T013 Ajouter `backend/internal/ports/member_repository.go` : interface MemberRepository { Create, FindByAccountID, Update }
+- [X] T014 [P] Ajouter `backend/internal/ports/association_repository.go` : interface AssociationRepository { Create, FindByAccountID, Update }
+- [X] T015 [P] Ajouter `backend/internal/ports/membership_repository.go` : interface MembershipRepository { Create, FindByAccountIDs }
+- [X] T016 [P] Ajouter `backend/internal/ports/file_store.go` : interface FileStore { StoreAvatar, AvatarURL } (cf. contracts/ports.md)
+- [X] T017 Étendre `backend/internal/ports/account_repository.go` : ajouter FindByID et UpdateKindAndStatus à l'interface AccountRepository
+- [X] T018 [P] Créer les fakes `backend/internal/ports/fakes/member_repository.go`, `association_repository.go`, `membership_repository.go`, `file_store.go` (fake en mémoire, un fichier par interface)
+- [X] T019 Mettre à jour `backend/internal/ports/fakes/account_repository.go` : implémenter FindByID et UpdateKindAndStatus
+- [X] T020 Créer `backend/internal/adapters/db/member_repository.go` : implémentation sqlc de MemberRepository (dépend de T006, T013)
+- [X] T021 [P] Créer `backend/internal/adapters/db/association_repository.go` : implémentation sqlc de AssociationRepository (dépend de T006, T014)
+- [X] T022 [P] Créer `backend/internal/adapters/db/membership_repository.go` : implémentation sqlc de MembershipRepository (dépend de T006, T015)
+- [X] T023 Étendre `backend/internal/adapters/db/account_repository.go` : implémenter FindByID et UpdateKindAndStatus (dépend de T017)
+- [X] T024 Créer `backend/internal/adapters/storage/local_file_store.go` : implémentation FileStore — StoreAvatar écrit dans `data/uploads/avatars/{accountID}/{uuid}.{ext}`, AvatarURL retourne `/uploads/avatars/…` (dépend de T016)
 
 **Checkpoint**: `go build ./...` passe, fakes compilent, domaines testés.
 
@@ -77,16 +77,16 @@ curl -s -X POST http://localhost:8080/api/v1/auth/register/member \
 
 ### Tests — US1
 
-- [ ] T025 [US1] Écrire `backend/internal/application/auth/register_member_test.go` : cas OK (account kind=member + member row créés, email envoyé, audit_log), âge < 18 → ErrTooYoung, email dupliqué → ErrEmailTaken, password faible → ErrWeakPassword
+- [X] T025 [US1] Écrire `backend/internal/application/auth/register_member_test.go` : cas OK (account kind=member + member row créés, email envoyé, audit_log), âge < 18 → ErrTooYoung, email dupliqué → ErrEmailTaken, password faible → ErrWeakPassword
 
 ### Implémentation — US1
 
-- [ ] T026 [US1] Créer `backend/internal/application/auth/register_member.go` : struct RegisterMemberService + func RegisterMember(ctx, ip, RegisterMemberInput) error — scission de register.go Phase 1 (ne pas modifier register.go tant que les tests ne passent pas) (dépend de T025)
-- [ ] T027 [US1] Écrire `backend/internal/adapters/http/register_handler_test.go` (section member) : POST /auth/register/member 201, 400 JSON malformé, 422 âge, 429 rate-limit
-- [ ] T028 [US1] Créer `backend/internal/adapters/http/register_handler.go` : func HandleRegisterMember — JSON decode, appel RegisterMemberService, 201/400/422/429 (dépend de T027)
-- [ ] T029 [US1] Mettre à jour `backend/internal/adapters/http/router.go` : enregistrer POST /api/v1/auth/register/member
-- [ ] T030 [P] [US1] Créer `frontend/components/auth/register-member-form.tsx` : formulaire Zod+RHF (email, password, first_name, last_name, birth_date) avec aria-describedby sur chaque champ d'erreur (pattern Phase 1)
-- [ ] T031 [P] [US1] Créer `frontend/app/(auth)/register/member/page.tsx` : page d'inscription Personne (utilise register-member-form)
+- [X] T026 [US1] Créer `backend/internal/application/auth/register_member.go` : struct RegisterMemberService + func RegisterMember(ctx, ip, RegisterMemberInput) error — scission de register.go Phase 1 (ne pas modifier register.go tant que les tests ne passent pas) (dépend de T025)
+- [X] T027 [US1] Écrire `backend/internal/adapters/http/register_handler_test.go` (section member) : POST /auth/register/member 201, 400 JSON malformé, 422 âge, 429 rate-limit
+- [X] T028 [US1] Créer `backend/internal/adapters/http/register_handler.go` : func HandleRegisterMember — JSON decode, appel RegisterMemberService, 201/400/422/429 (dépend de T027)
+- [X] T029 [US1] Mettre à jour `backend/internal/adapters/http/router.go` : enregistrer POST /api/v1/auth/register/member
+- [X] T030 [P] [US1] Créer `frontend/components/auth/register-member-form.tsx` : formulaire Zod+RHF (email, password, first_name, last_name, birth_date) avec aria-describedby sur chaque champ d'erreur (pattern Phase 1)
+- [X] T031 [P] [US1] Créer `frontend/app/(auth)/register/member/page.tsx` : page d'inscription Personne (utilise register-member-form)
 
 **Checkpoint**: US1 complète — inscription personne ≥ 18 ans fonctionne, < 18 → 422, email dupliqué → 409.
 
@@ -197,7 +197,7 @@ curl -s http://localhost:8080/api/v1/accounts/{ID_PRIVE}/profile | jq .
 
 **Purpose**: Alignement avec les specs transverses et validation finale.
 
-- [ ] T057 Ajouter le champ `kind` à la réponse de `GET /api/v1/auth/me` dans `backend/internal/application/auth/me.go` (R-007 — non-breaking, le champ est absent en Phase 1)
+- [X] T057 Ajouter le champ `kind` à la réponse de `GET /api/v1/auth/me` dans `backend/internal/application/auth/me.go` (R-007 — non-breaking, le champ est absent en Phase 1)
 - [ ] T058 [P] Vérifier RGAA AAA sur `register-member-form.tsx`, `register-association-form.tsx`, `member-profile-form.tsx`, `association-profile-form.tsx` : aria-label, aria-describedby, role, focus-visible présents sur tous les champs et boutons
 - [ ] T059 [P] Ajouter les tests d'intégration DB pour `member_repository.go`, `association_repository.go`, `membership_repository.go` dans `backend/internal/adapters/db/` (pattern existant avec testhelper_test.go)
 - [ ] T060 Exécuter le smoke test complet `quickstart.md` : migrate up + sqlc generate + go test -race + curl des 4 endpoints principaux
