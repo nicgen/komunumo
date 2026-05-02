@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	adapter "komunumo/backend/internal/adapters/http"
+	"komunumo/backend/internal/adapters/http/middleware"
 	"komunumo/backend/internal/application/profile"
 	"komunumo/backend/internal/domain/account"
 	"komunumo/backend/internal/domain/member"
@@ -39,11 +40,16 @@ func newProfileHandler(t *testing.T) (*adapter.ProfileHandler, *fakes.AccountRep
 	return h, accounts, members, associations, sessions
 }
 
+// withSession injects a session ID into the request context, simulating the Auth middleware.
+func withSession(r *http.Request, sessionID string) *http.Request {
+	ctx := context.WithValue(r.Context(), middleware.SessionIDKey, sessionID)
+	return r.WithContext(ctx)
+}
+
 func TestHandleGetMyProfile_Success(t *testing.T) {
 	h, accounts, members, _, sessions := newProfileHandler(t)
 	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
 
-	// Seed
 	acc, _ := account.New("acc-1", "lea@example.com", now)
 	acc.Kind = account.KindMember
 	_ = accounts.Create(context.Background(), acc)
@@ -52,8 +58,7 @@ func TestHandleGetMyProfile_Success(t *testing.T) {
 	sess := &session.Session{ID: "sess-1", AccountID: "acc-1", ExpiresAt: now.Add(1 * time.Hour)}
 	_ = sessions.Create(context.Background(), sess)
 
-	req := httptest.NewRequest("GET", "/api/v1/me/profile", nil)
-	req.AddCookie(&http.Cookie{Name: "session_id", Value: "sess-1"})
+	req := withSession(httptest.NewRequest("GET", "/api/v1/me/profile", nil), "sess-1")
 	rr := httptest.NewRecorder()
 
 	h.HandleGetMyProfile(rr, req)
@@ -69,7 +74,6 @@ func TestHandleUpdateMyProfile_Success(t *testing.T) {
 	h, accounts, members, _, sessions := newProfileHandler(t)
 	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
 
-	// Seed
 	acc, _ := account.New("acc-1", "lea@example.com", now)
 	acc.Kind = account.KindMember
 	_ = accounts.Create(context.Background(), acc)
@@ -80,15 +84,13 @@ func TestHandleUpdateMyProfile_Success(t *testing.T) {
 
 	nickname := "lea42"
 	body, _ := json.Marshal(profile.UpdateProfileInput{Nickname: &nickname})
-	req := httptest.NewRequest("PATCH", "/api/v1/me/profile", bytes.NewReader(body))
+	req := withSession(httptest.NewRequest("PATCH", "/api/v1/me/profile", bytes.NewReader(body)), "sess-1")
 	req.Header.Set("Content-Type", "application/json")
-	req.AddCookie(&http.Cookie{Name: "session_id", Value: "sess-1"})
 	rr := httptest.NewRecorder()
 
 	h.HandleUpdateMyProfile(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	
 	mUpdated, _ := members.FindByAccountID(context.Background(), "acc-1")
 	assert.Equal(t, "lea42", mUpdated.Nickname)
 }

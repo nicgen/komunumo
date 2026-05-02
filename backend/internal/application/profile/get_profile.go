@@ -55,9 +55,6 @@ func NewGetProfileService(
 
 func (s *GetProfileService) GetMyProfile(ctx context.Context, sessionID string) (*ProfileOutput, error) {
 	now := s.clock.Now()
-	// Wait, I should add clock to the service for testability if needed.
-	// But GetMyProfile doesn't strictly need it if we assume session is already checked by middleware.
-	// Actually, the service should check it.
 
 	sess, err := s.sessions.FindByID(ctx, sessionID, now)
 	if err != nil {

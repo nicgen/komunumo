@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"komunumo/backend/internal/adapters/http/middleware"
 	"komunumo/backend/internal/application/profile"
 )
 
@@ -25,14 +26,19 @@ func NewProfileHandler(
 	}
 }
 
+func sessionIDFromContext(r *http.Request) (string, bool) {
+	v, ok := r.Context().Value(middleware.SessionIDKey).(string)
+	return v, ok && v != ""
+}
+
 func (h *ProfileHandler) HandleGetMyProfile(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(sessionCookieName)
-	if err != nil || cookie.Value == "" {
+	sessionID, ok := sessionIDFromContext(r)
+	if !ok {
 		jsonError(w, "non authentifié", http.StatusUnauthorized)
 		return
 	}
 
-	out, err := h.getSvc.GetMyProfile(r.Context(), cookie.Value)
+	out, err := h.getSvc.GetMyProfile(r.Context(), sessionID)
 	if err != nil {
 		jsonError(w, "non authentifié", http.StatusUnauthorized)
 		return
@@ -43,8 +49,8 @@ func (h *ProfileHandler) HandleGetMyProfile(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *ProfileHandler) HandleUpdateMyProfile(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(sessionCookieName)
-	if err != nil || cookie.Value == "" {
+	sessionID, ok := sessionIDFromContext(r)
+	if !ok {
 		jsonError(w, "non authentifié", http.StatusUnauthorized)
 		return
 	}
@@ -55,9 +61,8 @@ func (h *ProfileHandler) HandleUpdateMyProfile(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = h.updateSvc.UpdateProfile(r.Context(), cookie.Value, clientIP(r), in)
-	if err != nil {
-		jsonError(w, err.Error(), http.StatusBadRequest) // Simple mapping for now
+	if err := h.updateSvc.UpdateProfile(r.Context(), sessionID, clientIP(r), in); err != nil {
+		jsonError(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -65,13 +70,12 @@ func (h *ProfileHandler) HandleUpdateMyProfile(w http.ResponseWriter, r *http.Re
 }
 
 func (h *ProfileHandler) HandleUploadAvatar(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(sessionCookieName)
-	if err != nil || cookie.Value == "" {
+	sessionID, ok := sessionIDFromContext(r)
+	if !ok {
 		jsonError(w, "non authentifié", http.StatusUnauthorized)
 		return
 	}
 
-	// Max 2MB
 	r.Body = http.MaxBytesReader(w, r.Body, 2*1024*1024)
 	file, header, err := r.FormFile("avatar")
 	if err != nil {
@@ -80,9 +84,9 @@ func (h *ProfileHandler) HandleUploadAvatar(w http.ResponseWriter, r *http.Reque
 	}
 	defer file.Close()
 
-	path, err := h.uploadSvc.UploadAvatar(r.Context(), cookie.Value, file, header.Size, header.Header.Get("Content-Type"))
+	path, err := h.uploadSvc.UploadAvatar(r.Context(), sessionID, file, header.Size, header.Header.Get("Content-Type"))
 	if err != nil {
-		jsonError(w, err.Error(), http.StatusBadRequest)
+		jsonError(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
