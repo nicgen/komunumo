@@ -7,7 +7,7 @@ import (
 	"komunumo/backend/internal/adapters/http/middleware"
 )
 
-func NewRouter(auth *AuthHandler) http.Handler {
+func NewRouter(auth *AuthHandler, register *RegisterHandler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.SecurityHeaders)
 
@@ -20,6 +20,8 @@ func NewRouter(auth *AuthHandler) http.Handler {
 		r.Get("/me", auth.Me)
 		r.Post("/password-reset/request", auth.PasswordResetRequest)
 		r.Post("/password-reset/confirm", auth.PasswordResetConfirm)
+
+		r.Post("/register/member", register.HandleRegisterMember)
 	})
 
 	// Protected routes (Phase 4+) will go here with r.Use(middleware.CSRF).
