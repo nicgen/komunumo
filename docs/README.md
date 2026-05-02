@@ -14,7 +14,7 @@ Les ADR, specs et le dossier emploient "AssoLink" pour parler du projet d'ingén
 ## Index
 
 | Dossier | Contenu |
-|---------|---------|
+| --------- | --------- |
 | [adr/](./adr/) | Architecture Decision Records (format MADR) |
 | [specs/](./specs/) | Specifications Speckit (vision, features, API, data, qualité) |
 | [diagrams/](./diagrams/) | Diagrammes Mermaid (cas d'usage, classes, séquence) |

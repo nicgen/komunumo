@@ -45,7 +45,7 @@ Feature: <nom>
 ## Permissions
 
 | Rôle | Action |
-|------|--------|
+| ------ | -------- |
 | ... | ... |
 
 ## Modèle de données impacté

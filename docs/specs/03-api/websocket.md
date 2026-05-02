@@ -16,18 +16,18 @@ Tous les messages (entrants et sortants) sont JSON :
 ## Événements client -> serveur
 
 | Type | Payload | Effet |
-|------|---------|-------|
+| ------ | --------- | ------- |
 | `chat.send` | `{ conversation_id, content }` | Envoie un message |
 | `chat.typing` | `{ conversation_id, typing: bool }` | Annonce typing |
 | `chat.read` | `{ conversation_id, until_message_id }` | Marque lu |
-| `presence.set` | `{ status: "active"|"idle"|"away" }` | MAJ présence |
+| `presence.set` | `{ status: "active"\|"idle"\|"away" }` | MAJ présence |
 | `subscribe` | `{ channel: "conversation:<id>" }` | S'abonne à un flux |
 | `unsubscribe` | `{ channel: "..." }` | Désabonnement |
 
 ## Événements serveur -> client
 
 | Type | Payload | Quand |
-|------|---------|-------|
+| ------ | --------- | ------- |
 | `chat.message` | `{ conversation_id, message: {...} }` | Nouveau message |
 | `chat.typing` | `{ conversation_id, account_id, typing }` | Typing tier |
 | `chat.read` | `{ conversation_id, account_id, until }` | Read receipt |

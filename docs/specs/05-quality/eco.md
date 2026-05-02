@@ -9,7 +9,7 @@
 ## Budgets de performance par page
 
 | Métrique | Cible homepage | Cible page interne | Cible feed authentifié |
-|----------|----------------|--------------------|------------------------|
+| ---------- | ---------------- | -------------------- | ------------------------ |
 | Poids transféré | < 300 KB | < 500 KB | < 700 KB (dont images) |
 | Nombre de requêtes | < 25 | < 35 | < 50 |
 | LCP | < 2.0s | < 2.5s | < 2.5s |
@@ -75,7 +75,7 @@ Si la feature pousse la page au-dessus du budget : refactor ou rejet.
 ## Décisions documentées
 
 | Décision | Gain estimé |
-|----------|-------------|
+| ---------- | ------------- |
 | Pas de Material Icons (font 130 KB), SVG inline à la place | -120 KB |
 | Pas de jQuery / Lodash | -50 KB chacun évité |
 | RSC pour pages publiques | -40 KB JS / page |

@@ -116,7 +116,7 @@ Feature: Réinitialisation de mot de passe
 ## Permissions
 
 | Action | Anonyme | Pending verification | Vérifié |
-|--------|---------|---------------------|---------|
+| -------- | --------- | --------------------- | --------- |
 | S'inscrire | Oui | - | - |
 | Se connecter | Oui (échec si pending) | - | Oui |
 | Vérifier email | Oui (via lien) | Oui | - |

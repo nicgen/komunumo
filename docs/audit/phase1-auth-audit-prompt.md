@@ -35,24 +35,24 @@ docs/
 
 Pour chaque principe, indique **CONFORME / PARTIEL / NON CONFORME** avec justification basée sur le code :
 
-**I. Architecture hexagonale + test-first**
+### I. Architecture hexagonale + test-first
 - Le code du domaine (`internal/domain`) ne doit avoir aucune dépendance externe (pas d'import `net/http`, `database/sql`, etc.)
 - Les use cases (`internal/application`) sont séparés des adapters
 - Pour chaque commit `feat(scope):` sur domain/application, existe-t-il un commit `test(scope):` antérieur dans l'historique de la branche ? (vérifier avec `git log --oneline`)
 - Couverture cible : domain >= 90%, application >= 80%, global >= 70% (lancer `go test -coverprofile=coverage.out ./...` et `go tool cover -func=coverage.out`)
 
-**II. Sécurité**
+### II. Sécurité
 - bcrypt cost >= 12 (chercher dans le code)
 - Cookie session : `HttpOnly`, `Secure`, `SameSite` définis
 - Aucun secret en clair dans le dépôt (chercher `password`, `secret`, `token` dans les fichiers non-.gitignored, hors tests)
 - `audit_log` : présence de la table, contrainte INSERT-only (trigger ou commentaire), événements `account_created` et `login_success` enregistrés
 - Rate limiting : présence d'un middleware ou équivalent pour login/inscription
 
-**III. Spec-driven**
+### III. Spec-driven
 - Tout endpoint de la spec auth a un test de contrat (fichier `*_test.go` dans `internal/adapters/http/`)
 - Migrations versionnées présentes dans `backend/internal/adapters/db/migrations/`
 
-**IV. Conventional Commits + workflow Git**
+### IV. Conventional Commits + workflow Git
 - `git log --oneline` : les commits respectent-ils le format `type(scope): message` ?
 
 ---
@@ -62,7 +62,7 @@ Pour chaque principe, indique **CONFORME / PARTIEL / NON CONFORME** avec justifi
 Pour chacun, indique **IMPLÉMENTÉ / PARTIEL / ABSENT** et note les écarts par rapport à la spec :
 
 | Endpoint | Attendu | Statut | Écarts |
-|----------|---------|--------|--------|
+| ---------- | --------- | -------- | -------- |
 | `POST /api/v1/auth/register` (ou `/register/member`) | Crée account + session pending_verification, envoie email, audit_log | | |
 | `POST /api/v1/auth/login` | Session cookie, audit_log, 403 si pending, 401 générique | | |
 | `POST /api/v1/auth/logout` | Supprime session, invalide cookie | | |
@@ -85,7 +85,7 @@ Pour chacun, indique **IMPLÉMENTÉ / PARTIEL / ABSENT** et note les écarts par
 Vérifie la présence et la complétude des pages/composants dans `frontend/app/(auth)/` :
 
 | Page | URL attendue | Présente ? | Remarques |
-|------|-------------|-----------|-----------|
+| ------ | ------------- | ----------- | ----------- |
 | Inscription | `/register` | | |
 | Connexion | `/login` | | |
 | Vérification email envoyée | `/verify-email/sent` | | |

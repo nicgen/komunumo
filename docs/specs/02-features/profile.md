@@ -29,7 +29,7 @@ Permettre aux comptes (member ou association) de présenter une identité publiq
 ## Décisions de cadrage Phase 2
 
 | Décision | Retenue | Justification |
-|----------|---------|---------------|
+| ---------- | --------- | --------------- |
 | Localisation PII (first_name, last_name, birth_date) | `members` (MLD) | Séparation nette auth/identité ; MLD fait autorité |
 | Valeurs status | `active`, `suspended`, `deleted` | Alignement MLD + RGPD article 17 (soft-delete) |
 | Visibility | `public`, `members_only`, `private` | 3 niveaux de visibilité |

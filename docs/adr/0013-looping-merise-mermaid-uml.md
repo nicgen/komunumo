@@ -14,7 +14,7 @@ ADR-0007 retenait Mermaid pour l'ensemble des modélisations, y compris ER pour 
 **Séparer les notations selon leur usage :**
 
 | Type de modèle | Outil | Format fichier | Rendu |
-|----------------|-------|----------------|-------|
+| ---------------- | ------- | ---------------- | ------- |
 | MCD (Merise) | **Looping** | `.lpg` (proprio binaire) + export PNG/SVG | image dans dossier |
 | MLD (Merise) | **Looping** (dérivation auto depuis MCD) | export PNG/SVG + DDL SQL généré | image + extrait SQL |
 | MPD (Merise) | **Looping** + post-édition manuelle | export PNG + DDL SQL final | image dans dossier |

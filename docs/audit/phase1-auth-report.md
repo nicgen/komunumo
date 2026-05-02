@@ -6,7 +6,7 @@ L'implémentation de la Phase 1 est **techniquement solide** sur l'architecture 
 ## 1. Constitution
 
 | Principe | Statut | Justification |
-|----------|---------|---------------|
+| ---------- | --------- | --------------- |
 | **I. Hexagonale** | **CONFORME** | Structure `domain`/`application`/`ports`/`adapters` respectée, aucune fuite de dépendance. |
 | **II. Test-first** | **PARTIEL** | Respecté pour US1 (`5be78c1`), mais absent pour US2, Password Reset et GET /me (pas de commit test antérieur dans le log). |
 | **III. Couverture** | **PARTIEL** | Domain: >95% (OK). Application: ~77% (Cible 80%). Global: 42% (Cible 70%). `internal/domain/session` n'est pas testé. |
@@ -16,7 +16,7 @@ L'implémentation de la Phase 1 est **techniquement solide** sur l'architecture 
 ## 2. Endpoints Auth
 
 | Endpoint | Attendu | Statut | Écarts |
-|----------|---------|--------|--------|
+| ---------- | --------- | -------- | -------- |
 | `POST /api/v1/auth/register` | Compte + session pending + email + audit | **PARTIEL** | Un seul type de compte (Member). Pas de distinction Association/Member. Pas de rate limit au niveau service. |
 | `POST /api/v1/auth/login` | Session cookie + audit | **CONFORME** | Cookie `SameSite=Lax` au lieu de `Strict`. |
 | `POST /api/v1/auth/logout` | Session delete + cookie invalid | **CONFORME** | |
@@ -35,11 +35,11 @@ L'implémentation de la Phase 1 est **techniquement solide** sur l'architecture 
 ## 3. Frontend
 
 | Page | URL attendue | Présente ? | Remarques |
-|------|-------------|-----------|-----------|
+| ------ | ------------- | ----------- | ----------- |
 | Inscription | `/register` | OUI | `/register/association` et `/register/member` fusionnés (non conforme à la spec). |
 | Connexion | `/login` | OUI | |
 | Vérif email envoyée | `/verify-email/sent` | OUI | |
-| Vérif email confirm | `/verify-email/confirm`| OUI | |
+| Vérif email confirm | `/verify-email/confirm` | OUI | |
 | Mot de passe oublié | `/forgot-password` | OUI | |
 | Reset confirmation | `/reset-password` | OUI | Situé techniquement sous `/reset-password/confirm`. |
 

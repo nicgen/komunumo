@@ -12,7 +12,7 @@ Format : [MADR 4.0](https://adr.github.io/madr/) - Markdown Any Decision Records
 ## Index
 
 | ID | Titre | Statut |
-|----|-------|--------|
+| ---- | ------- | -------- |
 | [0001](./0001-architecture-hexagonale-go.md) | Architecture hexagonale pour le backend Go | Accepté (révisé) |
 | [0002](./0002-nextjs-app-router-rsc.md) | Next.js 16 App Router et React Server Components | Accepté |
 | [0003](./0003-sqlite-wal-sqlc.md) | SQLite + WAL + sqlc comme couche persistance | Accepté (révisé) |
