@@ -31,3 +31,8 @@ func (s *FileStore) StoreAvatar(_ context.Context, accountID string, content io.
 func (s *FileStore) AvatarURL(path string) string {
 	return "/uploads/" + path
 }
+
+func (s *FileStore) FileExists(path string) bool {
+	_, ok := s.stored[path]
+	return ok
+}
