@@ -109,17 +109,17 @@ curl -s -X POST http://localhost:8080/api/v1/auth/register/association \
 
 ### Tests — US2
 
-- [ ] T032 [US2] Écrire `backend/internal/application/auth/register_association_test.go` : cas OK (account kind=association + associations + memberships role=owner créés), SIREN invalide → ErrInvalidSIREN, RNA invalide → ErrInvalidRNA, âge < 18 → ErrTooYoung, postal_code manquant → ErrValidation
+- [x] T032 [US2] Écrire `backend/internal/application/auth/register_association_test.go` : cas OK (account kind=association + associations + memberships role=owner créés), SIREN invalide → ErrInvalidSIREN, RNA invalide → ErrInvalidRNA, âge < 18 → ErrTooYoung, postal_code manquant → ErrValidation
 
 ### Implémentation — US2
 
-- [ ] T033 [US2] Créer `backend/internal/application/auth/register_association.go` : struct RegisterAssociationService + func RegisterAssociation(ctx, ip, RegisterAssociationInput) error — crée account(kind=association) + association + membership(role=owner, status=active) en transaction (dépend de T032)
-- [ ] T034 [US2] Écrire tests dans `backend/internal/adapters/http/register_handler_test.go` (section association) : 201, 422 SIREN, 422 âge, 400 champs manquants
-- [ ] T035 [US2] Ajouter `HandleRegisterAssociation` dans `backend/internal/adapters/http/register_handler.go` (dépend de T034)
-- [ ] T036 [US2] Mettre à jour `backend/internal/adapters/http/router.go` : enregistrer POST /api/v1/auth/register/association
-- [ ] T037 [P] [US2] Créer `frontend/app/(auth)/register/page.tsx` : page de sélection — deux boutons "Je suis une Personne" et "Je suis une Association" (liens vers /register/member et /register/association)
-- [ ] T038 [P] [US2] Créer `frontend/components/auth/register-association-form.tsx` : formulaire Zod+RHF (email, password, legal_name, postal_code, siren?, rna?, first_name, last_name, birth_date) avec aria-describedby
-- [ ] T039 [P] [US2] Créer `frontend/app/(auth)/register/association/page.tsx` (utilise register-association-form)
+- [x] T033 [US2] Créer `backend/internal/application/auth/register_association.go` : struct RegisterAssociationService + func RegisterAssociation(ctx, ip, RegisterAssociationInput) error — crée account(kind=association) + association + membership(role=owner, status=active) en transaction (dépend de T032)
+- [x] T034 [US2] Écrire tests dans `backend/internal/adapters/http/register_handler_test.go` (section association) : 201, 422 SIREN, 422 âge, 400 champs manquants
+- [x] T035 [US2] Ajouter `HandleRegisterAssociation` dans `backend/internal/adapters/http/register_handler.go` (dépend de T034)
+- [x] T036 [US2] Mettre à jour `backend/internal/adapters/http/router.go` : enregistrer POST /api/v1/auth/register/association
+- [x] T037 [P] [US2] Créer `frontend/app/(auth)/register/page.tsx` : page de sélection — deux boutons "Je suis une Personne" et "Je suis une Association" (liens vers /register/member et /register/association)
+- [x] T038 [P] [US2] Créer `frontend/components/auth/register-association-form.tsx` : formulaire Zod+RHF (email, password, legal_name, postal_code, siren?, rna?, first_name, last_name, birth_date) avec aria-describedby
+- [x] T039 [P] [US2] Créer `frontend/app/(auth)/register/association/page.tsx` (utilise register-association-form)
 
 **Checkpoint**: US1 + US2 complètes — les deux parcours d'inscription fonctionnent indépendamment.
 
