@@ -37,7 +37,7 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	dsn := envOr("KOMUNUMO_SQLITE_DSN", "./komunumo.db")
+	dsn := envOr("KOMUNUMO_SQLITE_DSN", "./data/assolink.db")
 	addr := envOr("KOMUNUMO_HTTP_ADDR", ":8080")
 	brevoKey := envOr("KOMUNUMO_BREVO_API_KEY", "test-key-noop")
 	appBaseURL := envOr("KOMUNUMO_APP_BASE_URL", "http://localhost:3000")
