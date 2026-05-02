@@ -68,3 +68,15 @@ func (m *Member) SetAboutMe(text string, _ time.Time) error {
 	m.AboutMe = text
 	return nil
 }
+
+func (m *Member) Validate() error {
+	if len([]rune(m.AboutMe)) > 500 {
+		return ErrAboutMeTooLong
+	}
+	switch m.Visibility {
+	case VisibilityPublic, VisibilityMembersOnly, VisibilityPrivate:
+	default:
+		m.Visibility = VisibilityPublic
+	}
+	return nil
+}

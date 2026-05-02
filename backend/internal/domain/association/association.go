@@ -84,3 +84,21 @@ func (a *Association) SetAbout(text string) error {
 	a.About = text
 	return nil
 }
+
+func (a *Association) Validate() error {
+	if len([]rune(a.About)) > 2000 {
+		return ErrAboutTooLong
+	}
+	if err := ValidateSIREN(a.SIREN); err != nil {
+		return err
+	}
+	if err := ValidateRNA(a.RNA); err != nil {
+		return err
+	}
+	switch a.Visibility {
+	case VisibilityPublic, VisibilityMembersOnly, VisibilityPrivate:
+	default:
+		a.Visibility = VisibilityPublic
+	}
+	return nil
+}

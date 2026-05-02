@@ -13,6 +13,7 @@ const (
 	EventAuthPasswordChanged    EventType = "auth.password_changed"
 	EventAuthLogout             EventType = "auth.logout"
 	EventAuthSessionExpired     EventType = "auth.session_expired"
+	EventProfileUpdated         EventType = "profile.updated"
 )
 
 type Event struct {
