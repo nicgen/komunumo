@@ -114,3 +114,28 @@ func TestRegisterMemberHandler_InvalidJSON_400(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
+
+func TestRegisterMemberHandler_EmailTaken_409(t *testing.T) {
+	handler, accounts, _, _ := newRegisterHandler(t)
+
+	// Seed existing account
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+	acc, _ := account.New("acc-1", "lea@example.com", now)
+	_ = accounts.Create(context.Background(), acc)
+
+	body, _ := json.Marshal(map[string]any{
+		"email":      "lea@example.com",
+		"password":   "SecurePass123!",
+		"first_name": "Léa",
+		"last_name":  "Martin",
+		"birth_date": "2000-01-15",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register/member", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-For", "192.0.2.1")
+	rr := httptest.NewRecorder()
+
+	handler.HandleRegisterMember(rr, req)
+
+	assert.Equal(t, http.StatusConflict, rr.Code)
+}

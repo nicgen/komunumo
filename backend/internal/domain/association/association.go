@@ -3,6 +3,7 @@ package association
 import (
 	"errors"
 	"regexp"
+	"time"
 )
 
 type Visibility string
@@ -60,7 +61,7 @@ func ValidateRNA(rna string) error {
 }
 
 // New creates an Association after validating required fields.
-func New(accountID, legalName, postalCode string) (*Association, error) {
+func New(accountID, legalName, postalCode string, _ time.Time) (*Association, error) {
 	if legalName == "" {
 		return nil, ErrInvalidLegalName
 	}

@@ -3,6 +3,7 @@ package association_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestNewAssociation_OK(t *testing.T) {
-	a, err := association.New("acc-1", "Les Amis du Code", "75011")
+	a, err := association.New("acc-1", "Les Amis du Code", "75011", time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, "acc-1", a.AccountID)
 	assert.Equal(t, "Les Amis du Code", a.LegalName)
@@ -20,12 +21,12 @@ func TestNewAssociation_OK(t *testing.T) {
 }
 
 func TestNewAssociation_EmptyLegalName(t *testing.T) {
-	_, err := association.New("acc-1", "", "75011")
+	_, err := association.New("acc-1", "", "75011", time.Now())
 	require.ErrorIs(t, err, association.ErrInvalidLegalName)
 }
 
 func TestNewAssociation_EmptyPostalCode(t *testing.T) {
-	_, err := association.New("acc-1", "Test", "")
+	_, err := association.New("acc-1", "Test", "", time.Now())
 	require.ErrorIs(t, err, association.ErrInvalidPostalCode)
 }
 
@@ -64,14 +65,14 @@ func TestValidateRNA_Empty(t *testing.T) {
 }
 
 func TestAssociation_SetAbout_TooLong(t *testing.T) {
-	a, _ := association.New("acc-1", "Test", "75011")
+	a, _ := association.New("acc-1", "Test", "75011", time.Now())
 	long := strings.Repeat("a", 2001)
 	err := a.SetAbout(long)
 	require.ErrorIs(t, err, association.ErrAboutTooLong)
 }
 
 func TestAssociation_SetAbout_OK(t *testing.T) {
-	a, _ := association.New("acc-1", "Test", "75011")
+	a, _ := association.New("acc-1", "Test", "75011", time.Now())
 	require.NoError(t, a.SetAbout("Nous aidons les développeurs."))
 	assert.Equal(t, "Nous aidons les développeurs.", a.About)
 }
