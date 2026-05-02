@@ -13,7 +13,6 @@ func NewRouter(auth *AuthHandler) http.Handler {
 
 	// Public auth endpoints — CSRF-exempt per D-009 (unauthenticated).
 	r.Route("/api/v1/auth", func(r chi.Router) {
-		r.Post("/register", auth.Register)
 		r.Post("/verify-email", auth.VerifyEmail)
 		r.Post("/resend-verification", auth.ResendVerification)
 		r.Post("/login", auth.Login)

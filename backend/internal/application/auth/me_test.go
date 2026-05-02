@@ -28,10 +28,9 @@ func TestMe_ValidSession(t *testing.T) {
 	svc, sessions, accounts, clk := newMeService(t)
 
 	now := clk.Now()
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
-	acc, err := account.New("acc-1", "anne@example.com", "Anne", "Dupont", dob, now)
+	acc, err := account.New("acc-1", "anne@example.com", now)
 	require.NoError(t, err)
-	acc.Status = account.StatusVerified
+	acc.Status = account.StatusActive
 	require.NoError(t, accounts.Create(context.Background(), acc))
 
 	sess := &session.Session{
@@ -48,8 +47,8 @@ func TestMe_ValidSession(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, acc.ID, out.AccountID)
 	assert.Equal(t, "anne@example.com", out.Email)
-	assert.Equal(t, "Anne", out.FirstName)
-	assert.Equal(t, account.StatusVerified, out.Status)
+	assert.Equal(t, account.StatusActive, out.Status)
+	assert.Equal(t, account.KindMember, out.Kind)
 }
 
 // T086 — Me returns ErrSessionNotFound for unknown session.

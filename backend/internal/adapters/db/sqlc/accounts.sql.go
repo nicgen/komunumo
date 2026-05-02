@@ -11,18 +11,8 @@ import (
 )
 
 const createAccount = `-- name: CreateAccount :exec
-INSERT INTO accounts (
-    id,
-    email,
-    email_canonical,
-    password_hash,
-    status,
-    first_name,
-    last_name,
-    date_of_birth,
-    created_at,
-    updated_at
-) VALUES (
+INSERT INTO accounts (id, email, email_canonical, password_hash, status, kind, created_at, updated_at)
+VALUES (
     ?1,
     ?2,
     ?3,
@@ -30,9 +20,7 @@ INSERT INTO accounts (
     ?5,
     ?6,
     ?7,
-    ?8,
-    ?9,
-    ?10
+    ?8
 )
 `
 
@@ -42,9 +30,7 @@ type CreateAccountParams struct {
 	EmailCanonical string
 	PasswordHash   string
 	Status         string
-	FirstName      string
-	LastName       string
-	DateOfBirth    string
+	Kind           string
 	CreatedAt      string
 	UpdatedAt      string
 }
@@ -56,9 +42,7 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) er
 		arg.EmailCanonical,
 		arg.PasswordHash,
 		arg.Status,
-		arg.FirstName,
-		arg.LastName,
-		arg.DateOfBirth,
+		arg.Kind,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -66,7 +50,7 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) er
 }
 
 const getAccountByEmailCanonical = `-- name: GetAccountByEmailCanonical :one
-SELECT id, email, email_canonical, password_hash, status, first_name, last_name, date_of_birth, created_at, updated_at, last_login_at FROM accounts WHERE email_canonical = ?1
+SELECT id, email, email_canonical, password_hash, status, kind, created_at, updated_at, last_login_at, deleted_at FROM accounts WHERE email_canonical = ?1
 `
 
 func (q *Queries) GetAccountByEmailCanonical(ctx context.Context, emailCanonical string) (Account, error) {
@@ -78,18 +62,17 @@ func (q *Queries) GetAccountByEmailCanonical(ctx context.Context, emailCanonical
 		&i.EmailCanonical,
 		&i.PasswordHash,
 		&i.Status,
-		&i.FirstName,
-		&i.LastName,
-		&i.DateOfBirth,
+		&i.Kind,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastLoginAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getAccountByID = `-- name: GetAccountByID :one
-SELECT id, email, email_canonical, password_hash, status, first_name, last_name, date_of_birth, created_at, updated_at, last_login_at FROM accounts WHERE id = ?1
+SELECT id, email, email_canonical, password_hash, status, kind, created_at, updated_at, last_login_at, deleted_at FROM accounts WHERE id = ?1
 `
 
 func (q *Queries) GetAccountByID(ctx context.Context, id string) (Account, error) {
@@ -101,12 +84,11 @@ func (q *Queries) GetAccountByID(ctx context.Context, id string) (Account, error
 		&i.EmailCanonical,
 		&i.PasswordHash,
 		&i.Status,
-		&i.FirstName,
-		&i.LastName,
-		&i.DateOfBirth,
+		&i.Kind,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastLoginAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -123,6 +105,42 @@ type TouchAccountLastLoginParams struct {
 
 func (q *Queries) TouchAccountLastLogin(ctx context.Context, arg TouchAccountLastLoginParams) error {
 	_, err := q.db.ExecContext(ctx, touchAccountLastLogin, arg.LastLoginAt, arg.ID)
+	return err
+}
+
+const updateAccountKind = `-- name: UpdateAccountKind :exec
+UPDATE accounts SET kind = ?1, updated_at = ?2 WHERE id = ?3
+`
+
+type UpdateAccountKindParams struct {
+	Kind      string
+	UpdatedAt string
+	ID        string
+}
+
+func (q *Queries) UpdateAccountKind(ctx context.Context, arg UpdateAccountKindParams) error {
+	_, err := q.db.ExecContext(ctx, updateAccountKind, arg.Kind, arg.UpdatedAt, arg.ID)
+	return err
+}
+
+const updateAccountKindAndStatus = `-- name: UpdateAccountKindAndStatus :exec
+UPDATE accounts SET kind = ?1, status = ?2, updated_at = ?3 WHERE id = ?4
+`
+
+type UpdateAccountKindAndStatusParams struct {
+	Kind      string
+	Status    string
+	UpdatedAt string
+	ID        string
+}
+
+func (q *Queries) UpdateAccountKindAndStatus(ctx context.Context, arg UpdateAccountKindAndStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateAccountKindAndStatus,
+		arg.Kind,
+		arg.Status,
+		arg.UpdatedAt,
+		arg.ID,
+	)
 	return err
 }
 

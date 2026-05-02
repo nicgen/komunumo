@@ -47,12 +47,11 @@ func newPasswordResetRequestService(t *testing.T) (
 
 func seedVerifiedAccountForReset(t *testing.T, accounts *fakes.AccountRepository) *account.Account {
 	t.Helper()
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	acc, err := account.New("acc-1", "anne@example.com", "Anne", "Dupont", dob, now)
+	acc, err := account.New("acc-1", "anne@example.com", now)
 	require.NoError(t, err)
 	acc.PasswordHash = "hash:OldPassword123!"
-	acc.Status = account.StatusVerified
+	acc.Status = account.StatusActive
 	require.NoError(t, accounts.Create(context.Background(), acc))
 	return acc
 }

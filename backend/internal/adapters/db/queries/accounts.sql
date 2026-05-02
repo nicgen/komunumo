@@ -1,27 +1,21 @@
 -- name: CreateAccount :exec
-INSERT INTO accounts (
-    id,
-    email,
-    email_canonical,
-    password_hash,
-    status,
-    first_name,
-    last_name,
-    date_of_birth,
-    created_at,
-    updated_at
-) VALUES (
+INSERT INTO accounts (id, email, email_canonical, password_hash, status, kind, created_at, updated_at)
+VALUES (
     sqlc.arg(id),
     sqlc.arg(email),
     sqlc.arg(email_canonical),
     sqlc.arg(password_hash),
     sqlc.arg(status),
-    sqlc.arg(first_name),
-    sqlc.arg(last_name),
-    sqlc.arg(date_of_birth),
+    sqlc.arg(kind),
     sqlc.arg(created_at),
     sqlc.arg(updated_at)
 );
+
+-- name: UpdateAccountKind :exec
+UPDATE accounts SET kind = sqlc.arg(kind), updated_at = sqlc.arg(updated_at) WHERE id = sqlc.arg(id);
+
+-- name: UpdateAccountKindAndStatus :exec
+UPDATE accounts SET kind = sqlc.arg(kind), status = sqlc.arg(status), updated_at = sqlc.arg(updated_at) WHERE id = sqlc.arg(id);
 
 -- name: GetAccountByEmailCanonical :one
 SELECT * FROM accounts WHERE email_canonical = sqlc.arg(email_canonical);

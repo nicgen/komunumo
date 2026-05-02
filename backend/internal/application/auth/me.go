@@ -11,9 +11,8 @@ import (
 type MeOutput struct {
 	AccountID string
 	Email     string
-	FirstName string
-	LastName  string
 	Status    account.Status
+	Kind      account.Kind
 }
 
 type MeService struct {
@@ -52,8 +51,7 @@ func (s *MeService) Me(ctx context.Context, sessionID string) (MeOutput, error) 
 	return MeOutput{
 		AccountID: acc.ID,
 		Email:     acc.Email,
-		FirstName: acc.FirstName,
-		LastName:  acc.LastName,
 		Status:    acc.Status,
+		Kind:      acc.Kind,
 	}, nil
 }

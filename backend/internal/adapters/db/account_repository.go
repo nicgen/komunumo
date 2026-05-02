@@ -32,9 +32,7 @@ func (r *AccountRepository) Create(ctx context.Context, a *account.Account) erro
 		EmailCanonical: a.EmailCanonical,
 		PasswordHash:   a.PasswordHash,
 		Status:         string(a.Status),
-		FirstName:      a.FirstName,
-		LastName:       a.LastName,
-		DateOfBirth:    a.DateOfBirth.Format("2006-01-02"),
+		Kind:           string(a.Kind),
 		CreatedAt:      encodeTime(a.CreatedAt),
 		UpdatedAt:      encodeTime(a.UpdatedAt),
 	})
@@ -77,6 +75,15 @@ func (r *AccountRepository) UpdateStatus(ctx context.Context, id string, status 
 	})
 }
 
+func (r *AccountRepository) UpdateKindAndStatus(ctx context.Context, id string, kind account.Kind, status account.Status, at time.Time) error {
+	return r.withTx(ctx).UpdateAccountKindAndStatus(ctx, sqlc.UpdateAccountKindAndStatusParams{
+		Kind:      string(kind),
+		Status:    string(status),
+		UpdatedAt: encodeTime(at),
+		ID:        id,
+	})
+}
+
 func (r *AccountRepository) UpdatePasswordHash(ctx context.Context, id, hash string, at time.Time) error {
 	return r.withTx(ctx).UpdateAccountPasswordHash(ctx, sqlc.UpdateAccountPasswordHashParams{
 		PasswordHash: hash,
@@ -101,10 +108,6 @@ func decodeAccount(row sqlc.Account) (*account.Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	dob, err := time.Parse("2006-01-02", row.DateOfBirth)
-	if err != nil {
-		return nil, err
-	}
 	lastLogin, err := decodeNullTime(row.LastLoginAt)
 	if err != nil {
 		return nil, err
@@ -115,9 +118,7 @@ func decodeAccount(row sqlc.Account) (*account.Account, error) {
 		EmailCanonical: row.EmailCanonical,
 		PasswordHash:   row.PasswordHash,
 		Status:         account.Status(row.Status),
-		FirstName:      row.FirstName,
-		LastName:       row.LastName,
-		DateOfBirth:    dob,
+		Kind:           account.Kind(row.Kind),
 		CreatedAt:      createdAt,
 		UpdatedAt:      updatedAt,
 		LastLoginAt:    lastLogin,

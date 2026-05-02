@@ -72,7 +72,6 @@ func run(logger *slog.Logger) error {
 		})
 	}
 
-	registerSvc := auth.NewRegisterService(accounts, tokens, auditRepo, emailSender, hasher, tokenGen, clk, rl, uow)
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditRepo, tokenGen, clk, uow)
 	resendSvc := auth.NewResendVerificationService(accounts, tokens, auditRepo, emailSender, tokenGen, clk, rl, uow)
 	sessionRepo := db.NewSessionRepository(conn)
@@ -82,7 +81,7 @@ func run(logger *slog.Logger) error {
 	pwResetConfSvc := auth.NewPasswordResetConfirmService(accounts, tokens, sessionRepo, auditRepo, emailSender, hasher, tokenGen, clk, uow)
 	meSvc := auth.NewMeService(sessionRepo, accounts, clk)
 
-	authHandler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc)
+	authHandler := httpadapter.NewAuthHandler(verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc)
 	router := httpadapter.NewRouter(authHandler)
 
 	srv := &http.Server{
