@@ -17,8 +17,11 @@ import (
 	"komunumo/backend/internal/adapters/log"
 	"komunumo/backend/internal/adapters/password"
 	"komunumo/backend/internal/adapters/ratelimit"
+	"komunumo/backend/internal/adapters/storage"
 	"komunumo/backend/internal/adapters/tokengen"
 	"komunumo/backend/internal/application/auth"
+	"komunumo/backend/internal/application/profile"
+	"komunumo/backend/internal/ports"
 	"github.com/joho/godotenv"
 )
 
@@ -34,7 +37,7 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	dsn := envOr("KOMUNUMO_SQLITE_DSN", "./komunumo.db")
+	dsn := envOr("KOMUNUMO_SQLITE_DSN", "./data/assolink.db")
 	addr := envOr("KOMUNUMO_HTTP_ADDR", ":8080")
 	brevoKey := envOr("KOMUNUMO_BREVO_API_KEY", "test-key-noop")
 	appBaseURL := envOr("KOMUNUMO_APP_BASE_URL", "http://localhost:3000")
@@ -57,14 +60,20 @@ func run(logger *slog.Logger) error {
 	tokens := db.NewTokenRepository(conn)
 	auditRepo := db.NewAuditRepository(conn)
 
-	emailSender := email.NewBrevoSender(email.BrevoConfig{
-		APIKey:     brevoKey,
-		FromEmail:  fromEmail,
-		FromName:   fromName,
-		AppBaseURL: appBaseURL,
-	})
+	var emailSender ports.EmailSender
+	if brevoKey == "" || brevoKey == "test-key-noop" || os.Getenv("NODE_ENV") == "development" {
+		logger.Info("using log email sender")
+		emailSender = email.NewLogSender(appBaseURL)
+	} else {
+		logger.Info("using brevo email sender")
+		emailSender = email.NewBrevoSender(email.BrevoConfig{
+			APIKey:     brevoKey,
+			FromEmail:  fromEmail,
+			FromName:   fromName,
+			AppBaseURL: appBaseURL,
+		})
+	}
 
-	registerSvc := auth.NewRegisterService(accounts, tokens, auditRepo, emailSender, hasher, tokenGen, clk, rl, uow)
 	verifySvc := auth.NewVerifyEmailService(accounts, tokens, auditRepo, tokenGen, clk, uow)
 	resendSvc := auth.NewResendVerificationService(accounts, tokens, auditRepo, emailSender, tokenGen, clk, rl, uow)
 	sessionRepo := db.NewSessionRepository(conn)
@@ -74,8 +83,23 @@ func run(logger *slog.Logger) error {
 	pwResetConfSvc := auth.NewPasswordResetConfirmService(accounts, tokens, sessionRepo, auditRepo, emailSender, hasher, tokenGen, clk, uow)
 	meSvc := auth.NewMeService(sessionRepo, accounts, clk)
 
-	authHandler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc)
-	router := httpadapter.NewRouter(authHandler)
+	memberRepo := db.NewMemberRepository(conn)
+	registerMemberSvc := auth.NewRegisterMemberService(accounts, memberRepo, auditRepo, emailSender, hasher, tokenGen, tokens, clk, rl, uow)
+
+	associationRepo := db.NewAssociationRepository(conn)
+	membershipRepo := db.NewMembershipRepository(conn)
+	registerAssociationSvc := auth.NewRegisterAssociationService(accounts, associationRepo, memberRepo, membershipRepo, auditRepo, emailSender, hasher, tokenGen, tokens, clk, rl, uow)
+
+	storage := storage.NewLocalFileStore("data/uploads", "/uploads")
+	getProfileSvc := profile.NewGetProfileService(accounts, memberRepo, associationRepo, sessionRepo, clk)
+	updateProfileSvc := profile.NewUpdateProfileService(accounts, memberRepo, associationRepo, sessionRepo, auditRepo, clk, tokenGen)
+	uploadAvatarSvc := profile.NewUploadAvatarService(accounts, memberRepo, sessionRepo, storage, clk)
+
+	secureCookies := os.Getenv("APP_ENV") == "production"
+	authHandler := httpadapter.NewAuthHandler(verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc, secureCookies)
+	registerHandler := httpadapter.NewRegisterHandler(registerMemberSvc, registerAssociationSvc)
+	profileHandler := httpadapter.NewProfileHandler(getProfileSvc, updateProfileSvc, uploadAvatarSvc)
+	router := httpadapter.NewRouter(authHandler, registerHandler, profileHandler, sessionRepo, clk)
 
 	srv := &http.Server{
 		Addr:              addr,

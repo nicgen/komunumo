@@ -18,6 +18,9 @@ servers:
   - url: http://localhost:8080/v1
     description: Dev local
 
+security:
+  - {}
+
 tags:
   - name: auth
   - name: accounts
@@ -33,6 +36,7 @@ tags:
 paths:
   /auth/register/member:
     post:
+      operationId: registerMember
       tags: [auth]
       summary: Inscrire une Personne
       requestBody:
@@ -47,6 +51,7 @@ paths:
 
   /auth/register/association:
     post:
+      operationId: registerAssociation
       tags: [auth]
       summary: Inscrire une Association
       requestBody:
@@ -60,6 +65,7 @@ paths:
 
   /auth/login:
     post:
+      operationId: loginUser
       tags: [auth]
       summary: Connexion
       requestBody:
@@ -78,6 +84,7 @@ paths:
 
   /auth/logout:
     post:
+      operationId: logoutUser
       tags: [auth]
       security: [{ sessionCookie: [] }]
       summary: Déconnexion
@@ -86,17 +93,21 @@ paths:
 
   /auth/me:
     get:
+      operationId: getCurrentAccount
       tags: [auth]
       security: [{ sessionCookie: [] }]
       summary: Compte courant
       responses:
         '200':
+          description: Informations sur le compte courant
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Account' }
+        '401': { description: Non authentifié }
 
   /auth/password-reset/request:
     post:
+      operationId: requestPasswordReset
       tags: [auth]
       summary: Demande de réinitialisation
       requestBody:
@@ -113,6 +124,7 @@ paths:
 
   /auth/password-reset/confirm:
     post:
+      operationId: confirmPasswordReset
       tags: [auth]
       summary: Réinitialiser le mot de passe via token
       requestBody:
@@ -131,6 +143,7 @@ paths:
 
   /accounts/{id}:
     get:
+      operationId: getPublicProfile
       tags: [accounts]
       summary: Profil public d'un compte
       parameters:
@@ -140,6 +153,7 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '200':
+          description: Profil public trouvé
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AccountPublic' }
@@ -147,6 +161,7 @@ paths:
 
   /posts:
     get:
+      operationId: getFeed
       tags: [posts]
       security: [{ sessionCookie: [] }]
       summary: Feed (chronologique, plafonné cf. F5)
@@ -159,10 +174,13 @@ paths:
           schema: { type: integer, default: 20, maximum: 50 }
       responses:
         '200':
+          description: Liste des posts (paginée)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PostPage' }
+        '401': { description: Non authentifié }
     post:
+      operationId: createPost
       tags: [posts]
       security: [{ sessionCookie: [] }]
       summary: Créer un post
@@ -173,34 +191,42 @@ paths:
             schema: { $ref: '#/components/schemas/PostCreate' }
       responses:
         '201':
+          description: Post créé
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Post' }
         '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { description: Non authentifié }
 
   /posts/{id}:
     get:
+      operationId: getPost
       tags: [posts]
       summary: Lire un post
       parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
       responses:
         '200':
+          description: Détails du post
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Post' }
         '403': { description: Visibilité restreinte }
         '404': { description: Inconnu ou supprimé }
     delete:
+      operationId: deletePost
       tags: [posts]
       security: [{ sessionCookie: [] }]
       summary: Supprimer un post (auteur uniquement)
       parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
       responses:
         '204': { description: Supprimé }
+        '401': { description: Non authentifié }
         '403': { description: Pas l'auteur }
+        '404': { description: Inconnu }
 
   /follows:
     post:
+      operationId: followAccount
       tags: [follows]
       security: [{ sessionCookie: [] }]
       summary: Demander à suivre un compte
@@ -215,31 +241,40 @@ paths:
                 target_id: { type: string }
       responses:
         '202': { description: Demande envoyée (pending) ou acceptée auto si compte public }
+        '401': { description: Non authentifié }
+        '400': { description: ID cible invalide ou déjà suivi }
 
   /follows/{id}:
     delete:
+      operationId: unfollowAccount
       tags: [follows]
       security: [{ sessionCookie: [] }]
       summary: Ne plus suivre / annuler demande
       parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
       responses:
         '204': { description: OK }
+        '401': { description: Non authentifié }
+        '404': { description: Relation non trouvée }
 
   /associations/{id}/members:
     get:
+      operationId: getAssociationMembers
       tags: [groups]
       summary: Membres d'une association
       parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
       responses:
         '200':
+          description: Liste des membres
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Membership' }
+        '404': { description: Association non trouvée }
 
   /associations/{id}/invite:
     post:
+      operationId: inviteMember
       tags: [groups]
       security: [{ sessionCookie: [] }]
       summary: Inviter une Personne dans l'association (owner/admin)
@@ -255,9 +290,13 @@ paths:
                 member_account_id: { type: string }
       responses:
         '202': { description: Invitation envoyée }
+        '401': { description: Non authentifié }
+        '403': { description: Droits insuffisants }
+        '404': { description: Association ou compte non trouvé }
 
   /events:
     post:
+      operationId: createEvent
       tags: [events]
       security: [{ sessionCookie: [] }]
       summary: Créer un événement (association)
@@ -268,9 +307,13 @@ paths:
             schema: { $ref: '#/components/schemas/EventCreate' }
       responses:
         '201': { description: Créé }
+        '401': { description: Non authentifié }
+        '403': { description: Pas une association }
+        '400': { description: Données invalides }
 
   /events/{id}/rsvp:
     post:
+      operationId: respondToEvent
       tags: [events]
       security: [{ sessionCookie: [] }]
       summary: Répondre à un événement
@@ -286,9 +329,12 @@ paths:
                 response: { type: string, enum: [going, not_going, maybe] }
       responses:
         '204': { description: OK }
+        '401': { description: Non authentifié }
+        '404': { description: Événement non trouvé }
 
   /search:
     get:
+      operationId: searchUnified
       tags: [search]
       summary: Recherche unifiée (FTS5) - cf. F3
       parameters:
@@ -301,34 +347,43 @@ paths:
           schema: { type: string, enum: [all, post, account, group] }
       responses:
         '200':
+          description: Résultats de recherche
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SearchResults' }
+        '400': { description: Requête trop courte }
 
   /notifications:
     get:
+      operationId: getNotifications
       tags: [notifications]
       security: [{ sessionCookie: [] }]
       summary: Notifications (avec agrégation F2)
       responses:
         '200':
+          description: Liste des notifications
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Notification' }
+        '401': { description: Non authentifié }
 
   /notifications/{id}/read:
     post:
+      operationId: markNotificationRead
       tags: [notifications]
       security: [{ sessionCookie: [] }]
       summary: Marquer comme lue
       parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
       responses:
         '204': { description: OK }
+        '401': { description: Non authentifié }
+        '404': { description: Notification non trouvée }
 
   /rgpd/export:
     post:
+      operationId: requestDataExport
       tags: [rgpd]
       security: [{ sessionCookie: [] }]
       summary: Exporter mes données (article 20) - F9
@@ -341,18 +396,25 @@ paths:
                 type: object
                 properties:
                   export_id: { type: string }
+        '401': { description: Non authentifié }
+        '429': { description: Trop de demandes d'export }
 
   /rgpd/export/{id}:
     get:
+      operationId: downloadDataExport
       tags: [rgpd]
       security: [{ sessionCookie: [] }]
       summary: Télécharger l'export (ZIP contenant JSON + PDF)
       parameters: [{ in: path, name: id, required: true, schema: { type: string }}]
       responses:
         '200':
+          description: Archive ZIP de l'export
           content:
             application/zip: {}
         '202': { description: Pas encore prêt }
+        '401': { description: Non authentifié }
+        '403': { description: Pas votre export }
+        '404': { description: Export non trouvé }
 
 components:
   securitySchemes:
@@ -479,7 +541,7 @@ components:
         payload: { type: object }
         aggregate_count: { type: integer }
         created_at: { type: string, format: date-time }
-        read_at: { type: string, format: date-time, nullable: true }
+        read_at: { type: ["string", "null"], format: date-time }
     SearchResults:
       type: object
       properties:

@@ -13,12 +13,12 @@ Conventions :
 ### `accounts`
 
 | Colonne | Type | Contraintes |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | id | TEXT (UUID) | PK |
 | email | TEXT | NOT NULL UNIQUE |
 | password_hash | TEXT | NOT NULL |
-| status | TEXT | NOT NULL CHECK IN ('pending_verification','active','suspended','deleted') |
-| kind | TEXT | NOT NULL CHECK IN ('member','association') |
+| status | TEXT | NOT NULL CHECK IN ('pending_verification','active','suspended','deleted') — Phase 2 : renommer verified→active, disabled→suspended |
+| kind | TEXT | NOT NULL CHECK IN ('member','association') — ajouté migration 0002 |
 | created_at | INTEGER | NOT NULL |
 | updated_at | INTEGER | NOT NULL |
 | deleted_at | INTEGER | NULL |
@@ -28,7 +28,7 @@ Index : `idx_accounts_email_lower` sur `lower(email)`, `idx_accounts_status` sur
 ### `members`
 
 | Colonne | Type | Contraintes |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | account_id | TEXT | PK FK -> accounts(id) |
 | first_name | TEXT | NOT NULL |
 | last_name | TEXT | NOT NULL |
@@ -36,12 +36,12 @@ Index : `idx_accounts_email_lower` sur `lower(email)`, `idx_accounts_status` sur
 | nickname | TEXT | NULL |
 | about_me | TEXT | NULL |
 | avatar_path | TEXT | NULL |
-| visibility | TEXT | NOT NULL CHECK IN ('public','private') |
+| visibility | TEXT | NOT NULL CHECK IN ('public','members_only','private') |
 
 ### `associations`
 
 | Colonne | Type | Contraintes |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | account_id | TEXT | PK FK -> accounts(id) |
 | legal_name | TEXT | NOT NULL |
 | siren | TEXT | NULL |
@@ -49,14 +49,14 @@ Index : `idx_accounts_email_lower` sur `lower(email)`, `idx_accounts_status` sur
 | postal_code | TEXT | NOT NULL |
 | about | TEXT | NULL |
 | logo_path | TEXT | NULL |
-| visibility | TEXT | NOT NULL CHECK IN ('public','private') |
+| visibility | TEXT | NOT NULL CHECK IN ('public','members_only','private') |
 
 Index : `idx_associations_postal_code` sur `postal_code` (filtre carte V1).
 
 ### `memberships`
 
 | Colonne | Type | Contraintes |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | id | TEXT (UUID) | PK |
 | member_account_id | TEXT | NOT NULL FK -> accounts(id) |
 | association_account_id | TEXT | NOT NULL FK -> accounts(id) |
@@ -69,7 +69,7 @@ Index : UNIQUE `(member_account_id, association_account_id)` ; `idx_memberships_
 ### `follows`
 
 | Colonne | Type | Contraintes |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | id | TEXT (UUID) | PK |
 | follower_account_id | TEXT | NOT NULL FK -> accounts(id) |
 | target_account_id | TEXT | NOT NULL FK -> accounts(id) |
@@ -81,7 +81,7 @@ Index : UNIQUE `(follower_account_id, target_account_id)` ; `idx_follows_target`
 ### `posts`
 
 | Colonne | Type | Contraintes |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | id | TEXT (UUID) | PK |
 | author_account_id | TEXT | NOT NULL FK -> accounts(id) |
 | content | TEXT | NOT NULL CHECK length <= 5000 |
@@ -112,7 +112,7 @@ Index : `(recipient_account_id, created_at DESC)`, `idx_notifications_unread` pa
 ### `sessions`
 
 | Colonne | Type |
-|---------|------|
+| --------- | ------ |
 | id | TEXT (token base64) PK |
 | account_id | TEXT FK |
 | ip_hash | TEXT (sha256(ip+pepper)) |
@@ -126,7 +126,7 @@ Index : `idx_sessions_account` sur `account_id`, `idx_sessions_expires` partiel 
 ### `audit_log`
 
 | Colonne | Type |
-|---------|------|
+| --------- | ------ |
 | id | INTEGER PK AUTOINCREMENT |
 | actor_account_id | TEXT FK |
 | action | TEXT |

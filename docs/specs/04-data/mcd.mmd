@@ -5,43 +5,43 @@
 erDiagram
     ACCOUNT {
         uuid id PK
-        string email UK
+        string email
         string password_hash
-        string status "pending_verification|active|suspended|deleted"
-        string kind "member|association"
+        string status "pending_verification/active/suspended/deleted"
+        string kind "member/association"
         datetime created_at
         datetime updated_at
         datetime deleted_at
     }
 
     MEMBER {
-        uuid account_id PK_FK
+        uuid account_id PK
         string first_name
         string last_name
-        date birth_date
+        string birth_date
         string nickname
         string about_me
         string avatar_path
-        string visibility "public|private"
+        string visibility "public/private"
     }
 
     ASSOCIATION {
-        uuid account_id PK_FK
+        uuid account_id PK
         string legal_name
         string siren
         string rna
         string postal_code
         string about
         string logo_path
-        string visibility "public|private"
+        string visibility "public/private"
     }
 
     MEMBERSHIP {
         uuid id PK
         uuid member_account_id FK
         uuid association_account_id FK
-        string role "owner|admin|member"
-        string status "pending|active|left"
+        string role "owner/admin/member"
+        string status "pending/active/left"
         datetime joined_at
     }
 
@@ -49,7 +49,7 @@ erDiagram
         uuid id PK
         uuid follower_account_id FK
         uuid target_account_id FK
-        string status "pending|accepted|declined"
+        string status "pending/accepted/declined"
         datetime created_at
     }
 
@@ -57,7 +57,7 @@ erDiagram
         uuid id PK
         uuid author_account_id FK
         string content "max 5000 chars"
-        string visibility "public|followers|members|private"
+        string visibility "public/followers/members/private"
         string media_path
         string media_alt
         datetime created_at
@@ -94,13 +94,13 @@ erDiagram
     EVENT_RSVP {
         uuid event_id FK
         uuid account_id FK
-        string response "going|not_going|maybe"
+        string response "going/not_going/maybe"
         datetime answered_at
     }
 
     CONVERSATION {
         uuid id PK
-        string kind "direct|group_channel"
+        string kind "direct/group_channel"
         uuid association_account_id FK "nullable, set if group_channel"
         string name "for channels"
         datetime created_at
@@ -125,7 +125,7 @@ erDiagram
     NOTIFICATION {
         uuid id PK
         uuid recipient_account_id FK
-        string kind "follow_request|group_invite|event_created|post_liked|..."
+        string kind "follow_request/group_invite/event_created/post_liked/..."
         string payload_json
         datetime created_at
         datetime delivered_at
@@ -172,10 +172,10 @@ erDiagram
     }
 
     USER_PREFERENCES {
-        uuid account_id PK_FK
-        string theme "light|dark|auto"
-        string font_size "sm|md|lg"
-        string spacing "compact|normal|loose"
+        uuid account_id PK
+        string theme "light/dark/auto"
+        string font_size "sm/md/lg"
+        string spacing "compact/normal/loose"
         bool reduce_motion
         bool high_contrast
         bool sober_mode "F-eco - text-only"

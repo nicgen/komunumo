@@ -23,7 +23,7 @@ func newMeHandler(t *testing.T) (*httpadapter.AuthHandler, *fakes.SessionReposit
 	accounts := fakes.NewAccountRepository()
 	clk := fakes.NewClock(time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC))
 	meSvc := auth.NewMeService(sessions, accounts, clk)
-	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, nil, nil, nil, meSvc)
+	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, nil, nil, meSvc, false)
 	return handler, sessions, accounts
 }
 
@@ -32,10 +32,9 @@ func TestMeHandler_ValidSession_200(t *testing.T) {
 	handler, sessions, accounts := newMeHandler(t)
 
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
-	acc, err := account.New("acc-1", "anne@example.com", "Anne", "Dupont", dob, now)
+	acc, err := account.New("acc-1", "anne@example.com", now)
 	require.NoError(t, err)
-	acc.Status = account.StatusVerified
+	acc.Status = account.StatusActive
 	require.NoError(t, accounts.Create(t.Context(), acc))
 
 	sess := &session.Session{
@@ -58,7 +57,7 @@ func TestMeHandler_ValidSession_200(t *testing.T) {
 	var body map[string]any
 	require.NoError(t, json.NewDecoder(rr.Body).Decode(&body))
 	assert.Equal(t, "anne@example.com", body["email"])
-	assert.Equal(t, "Anne", body["first_name"])
+	assert.Equal(t, "member", body["kind"])
 }
 
 // T089 — GET /me without cookie returns 401.

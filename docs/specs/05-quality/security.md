@@ -5,7 +5,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Authentification
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V2.1.1 - Pas d'envoi du mot de passe en clair en logs | `slog` avec redaction PII, lint vérifie absence de `slog.Info("...password=%s",...)` |
 | V2.1.2 - Mot de passe ≥ 12 caractères | Validation client (Zod) + serveur (validator) |
 | V2.1.7 - Pas de mots de passe communs | TODO V2 : check offline contre top-100k haveibeenpwned |
@@ -17,7 +17,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Sessions
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V3.2.1 - Session ID 128 bits | 32 octets random base64 |
 | V3.4.1 - Cookie HttpOnly | Oui |
 | V3.4.2 - Cookie Secure | Oui |
@@ -29,7 +29,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Autorisation
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V4.1.1 - Vérification d'autorisation à chaque endpoint | Middleware `RequireAuth` + assertion par use case |
 | V4.1.3 - Principe du moindre privilège | Rôles `owner/admin/member` |
 | V4.2.1 - IDOR mitigé | UUID v7 imprévisibles + check ownership systématique |
@@ -37,7 +37,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Validation entrée
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V5.1.3 - Allow-list pour les enums | CHECK constraints + validator `oneof=...` |
 | V5.1.5 - Refus des HTML dans les champs texte | Sanitizer `bluemonday` (UGC policy) |
 | V5.2.5 - Limites de taille | maxLength dans OpenAPI + validator |
@@ -46,7 +46,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Cryptographie
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V6.2.1 - Algos approuvés | bcrypt, HMAC-SHA256, AES-GCM si chiffrement |
 | V6.2.5 - Pas de MD5/SHA1 | Lint `gosec` |
 | V6.4.1 - Secrets non en code | 1Password via `op run` |
@@ -54,7 +54,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Logging
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V7.1.1 - Pas de PII en logs | Helper `slog.With("email_hash", hash(email))` jamais d'email brut |
 | V7.2.1 - Logs structurés | `log/slog` JSON handler |
 | V7.3.1 - Logs append-only pour audit | Table `audit_log` avec trigger anti-update + HMAC chaîné (F6) |
@@ -63,7 +63,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Communication
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V9.1.1 - TLS 1.2+ uniquement | Traefik conf TLS 1.2 min, 1.3 préféré |
 | V9.1.2 - HSTS strict | Header HSTS `max-age=31536000; includeSubDomains; preload` |
 | V9.2.1 - Certificats validés (Let's Encrypt + Cloudflare DNS-01) | Existant |
@@ -71,7 +71,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Configuration
 
 | Contrôle | Mise en œuvre |
-|----------|---------------|
+| ---------- | --------------- |
 | V14.1.1 - Process de build documenté | Dockerfile + GitHub Actions versionnés |
 | V14.4.1 - CSP | `Content-Security-Policy: default-src 'self'; img-src 'self' data:; ...` |
 | V14.4.2 - X-Frame-Options DENY | Oui |
@@ -82,7 +82,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Anti-abus
 
 | Mesure | Implémentation |
-|--------|----------------|
+| -------- | ---------------- |
 | Rate limiting global | Token bucket par IP en mémoire (Go) |
 | Rate limiting auth | 5 inscriptions/IP/h, 10 logins/IP/15min |
 | Rate limiting WS | 60 msg/min/compte |
@@ -92,7 +92,7 @@ Référentiel : **OWASP ASVS 4.0 niveau L1** (cible MVP) avec quelques contrôle
 ## Outils de scan automatique en CI
 
 | Outil | Rôle |
-|-------|------|
+| ------- | ------ |
 | `gosec` | SAST Go |
 | `govulncheck` | CVE dans deps Go |
 | `npm audit` (ou `pnpm audit`) | CVE deps JS |

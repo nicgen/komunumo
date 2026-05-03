@@ -113,7 +113,7 @@ Release GitHub avec changelog auto-généré (script `cliff` ou `release-please`
 À chaque jalon clé du planning, **un commit ou un tag** doit matérialiser l'avancement :
 
 | Jalon | Action Git |
-|-------|-----------|
+| ------- | ----------- |
 | Fin de cadrage S0 | tag `v0.1.0`, commit `chore: initial documentation skeleton` |
 | Fin de squelette technique S0 | tag `v0.2.0`, commit `feat(scaffold): backend and frontend skeletons` |
 | Fin S1 (auth + profils) | tag `v0.3.0` |

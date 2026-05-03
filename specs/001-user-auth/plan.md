@@ -13,7 +13,7 @@ Implémenter le parcours d'authentification end-to-end (inscription, vérificati
 **Primary Dependencies**:
 - Backend : `golang-migrate` pour migrations, `sqlc` pour la génération de code SQL → Go (cf. ADR-0003), `modernc.org/sqlite` (driver pure Go), `golang.org/x/crypto/bcrypt`, `github.com/go-chi/chi/v5` ou `net/http` standard, client HTTP Brevo (API REST).
 - Frontend : Next.js App Router + RSC (cf. ADR-0002), Tailwind v4 + shadcn/ui sur Radix UI (cf. ADR-0006), `zod` pour validation, `react-hook-form` si interactivité avancée nécessaire.
-**Storage**: SQLite WAL + FTS5, migrations versionnées via `golang-migrate`, requêtes via `sqlc` (pas d'ORM). Tables touchées : `accounts`, `sessions`, `email_verifications`, `password_resets`, `audit_log`.
+**Storage**: SQLite WAL + FTS5, migrations versionnées via `golang-migrate`, requêtes via `sqlc` (pas d'ORM). Tables Phase 1 : `accounts`, `sessions`, `email_verifications`, `password_resets`, `audit_log`. Tables `members`, `associations`, `memberships` reportées en Phase 2 (migration 0002).
 **Testing**:
 - Backend : `testing` standard + `testify/require` ; tests domaine purs (sans DB) ; tests d'intégration sur SQLite fichier temporaire ; tests de contrat sur les handlers HTTP via `httptest`.
 - Frontend : `vitest` + `@testing-library/react` ; tests E2E `playwright` sur les parcours critiques (post-MVP).
@@ -171,9 +171,21 @@ frontend/
 
 **Structure Decision**: web application avec backend Go hexagonal et frontend Next.js séparés. Le frontend ne contient **aucune route API** : toute logique métier passe par le backend. Un proxy (Vercel rewrites en preview/prod, `next.config.ts` rewrites en dev) forward les requêtes `/api/*` vers `https://api.local.hello-there.net` (dev) ou la cible démo Scaleway. Cette séparation respecte la Constitution principe III (architecture hexagonale stricte) et permet d'envisager une consommation future par d'autres clients (mobile, ActivityPub) sans réécrire le domaine.
 
-## Complexity Tracking
+## Scope & Deferrals
 
-> Aucune violation de la Constitution Check, rien à tracker.
+### [REPORTÉ] Inscription Association
+
+L'implémentation de `POST /api/v1/auth/register/association` est officiellement reportée à la **Phase 2 (Module Organisation & Membership)**.
+
+- **Raison** : dépendance forte sur les tables `associations` et `memberships` qui n'existent pas en Phase 1. Ces tables sont créées par la migration `0002_profiles` en Phase 2.
+- **Impact** : la Phase 1 valide l'infrastructure complète (sessions, tokens, rate limiting, audit log, RGAA) via le parcours Membre uniquement. Aucun endpoint Phase 1 n'est compromis par ce report.
+- **Résolution** : Phase 2, step 1 — migration 0002 + split de `POST /api/v1/auth/register` en `/member` et `/association`.
+
+### [DÉCISION] Cookie SameSite=Strict
+
+La spec initiale mentionnait `SameSite=Lax`. Après audit Phase 1, aligné sur la Constitution (principe V) : cookie posé en `SameSite=Strict`. La spec `auth.md` a été mise à jour en conséquence (2026-05-02).
+
+## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|--------------------------------------|

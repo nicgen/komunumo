@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 # Cancel in-progress runs on new pushes to the same branch
 concurrency:
@@ -69,23 +69,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.26'
           cache-dependency-path: backend/go.sum
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: backend
+        # We use 'go install' instead of the official action because Go 1.26.2 is very new
+        # and pre-built binaries might still be built with an older Go version.
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          $(go env GOPATH)/bin/golangci-lint run ./cmd/... ./internal/...
       - name: gosec
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec -fmt sarif -out gosec.sarif ./... || true
+          $(go env GOPATH)/bin/gosec -fmt sarif -out gosec.sarif ./cmd/... ./internal/... || true
       - name: govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          $(go env GOPATH)/bin/govulncheck ./cmd/... ./internal/...
       - name: tests
-        run: go test -race -coverprofile=coverage.out ./...
+        run: go test -race -coverprofile=coverage.out ./cmd/... ./internal/...
       - name: build
         run: go build -o /tmp/komunumo-api ./cmd/server
       - name: upload coverage
@@ -104,6 +105,8 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+    env:
+      KOMUNUMO_API_INTERNAL_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -115,10 +118,14 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level=high
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test --coverage
+      - run: pnpm test
       - run: pnpm build
+      - name: lighthouse-ci
+        run: npx --yes @lhci/cli@0.14.0 autorun
+        continue-on-error: true
 
   # ------------------------------------------------------------------
   # Docs: lint markdown, validate Mermaid + OpenAPI
@@ -139,9 +146,8 @@ jobs:
       - name: validate Mermaid
         continue-on-error: true
         run: |
-          npm install -g @mermaid-js/mermaid-cli
           for f in docs/diagrams/*.mmd docs/specs/04-data/*.mmd; do
-            mmdc -i "$f" -o /tmp/$(basename "$f" .mmd).svg
+            npx -p @mermaid-js/mermaid-cli mmdc -p puppeteer-config.json -i "$f" -o /tmp/$(basename "$f" .mmd).svg
           done
 
   # ------------------------------------------------------------------
@@ -163,26 +169,58 @@ jobs:
           ignore-unfixed: true
 
   # ------------------------------------------------------------------
-  # SonarCloud (Quality Gate) - réactivé quand SONAR_TOKEN sera configuré
-  # et qu'il y aura du code à analyser. Voir ADR-0008.
+  # CodeQL — SAST GitHub natif (Go + TypeScript). Voir security.md.
   # ------------------------------------------------------------------
-  # sonar:
-  #   needs: [backend, frontend]
-  #   if: always() && github.event_name != 'merge_group'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: backend-coverage
-  #         path: backend/
-  #       continue-on-error: true
-  #     - uses: SonarSource/sonarcloud-github-action@v3
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  codeql:
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [go, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: backend/go.sum
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ------------------------------------------------------------------
+  # SonarCloud — qualité globale + surveillance du code LLM. Voir ADR-0008.
+  # Désactiver : commenter ce job ou supprimer le secret SONAR_TOKEN.
+  # ------------------------------------------------------------------
+  sonar:
+    needs: [backend, frontend]
+    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'merge_group'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/
+        continue-on-error: true
+      - uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   # ------------------------------------------------------------------
   # Quality gate: required jobs must not fail (skipped is OK)

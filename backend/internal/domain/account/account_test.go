@@ -10,10 +10,7 @@ import (
 	"komunumo/backend/internal/domain/account"
 )
 
-var (
-	now = time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	dob = now.AddDate(-20, 0, 0)
-)
+var now = time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
 
 func TestCanonicalizeEmail(t *testing.T) {
 	tests := []struct {
@@ -44,44 +41,23 @@ func TestCanonicalizeEmail(t *testing.T) {
 	}
 }
 
-func TestNew_AgeValidation(t *testing.T) {
-	t.Run("exactly 16 is allowed", func(t *testing.T) {
-		dob16 := now.AddDate(-16, 0, 0)
-		a, err := account.New("id1", "user@example.com", "Léa", "Dupont", dob16, now)
-		require.NoError(t, err)
-		assert.NotNil(t, a)
-	})
-
-	t.Run("15 years 364 days is rejected", func(t *testing.T) {
-		dob15 := now.AddDate(-16, 0, 1)
-		_, err := account.New("id1", "user@example.com", "Léa", "Dupont", dob15, now)
-		require.ErrorIs(t, err, account.ErrAgeBelow16)
-	})
-
-	t.Run("30 years is allowed", func(t *testing.T) {
-		dob30 := now.AddDate(-30, 0, 0)
-		a, err := account.New("id1", "user@example.com", "Léa", "Dupont", dob30, now)
-		require.NoError(t, err)
-		assert.NotNil(t, a)
-	})
-}
-
 func TestNew_EmailCanonical(t *testing.T) {
-	a, err := account.New("id1", "Léa@Example.COM", "Léa", "Dupont", dob, now)
+	a, err := account.New("id1", "Léa@Example.COM", now)
 	require.NoError(t, err)
 	assert.Equal(t, "Léa@Example.COM", a.Email)
 	assert.Equal(t, "léa@example.com", a.EmailCanonical)
 }
 
 func TestNew_InvalidEmail(t *testing.T) {
-	_, err := account.New("id1", "notanemail", "Léa", "Dupont", dob, now)
+	_, err := account.New("id1", "notanemail", now)
 	require.ErrorIs(t, err, account.ErrEmailMalformed)
 }
 
 func TestNew_InitialStatus(t *testing.T) {
-	a, err := account.New("id1", "user@example.com", "Léa", "Dupont", dob, now)
+	a, err := account.New("id1", "user@example.com", now)
 	require.NoError(t, err)
 	assert.Equal(t, account.StatusPendingVerification, a.Status)
+	assert.Equal(t, account.KindMember, a.Kind)
 	assert.Equal(t, now, a.CreatedAt)
 	assert.Equal(t, now, a.UpdatedAt)
 }
@@ -89,22 +65,22 @@ func TestNew_InitialStatus(t *testing.T) {
 func TestVerify_Transitions(t *testing.T) {
 	later := now.Add(time.Hour)
 
-	t.Run("pending → verified OK", func(t *testing.T) {
-		a, _ := account.New("id1", "user@example.com", "Léa", "Dupont", dob, now)
+	t.Run("pending → active OK", func(t *testing.T) {
+		a, _ := account.New("id1", "user@example.com", now)
 		require.NoError(t, a.Verify(later))
-		assert.Equal(t, account.StatusVerified, a.Status)
+		assert.Equal(t, account.StatusActive, a.Status)
 		assert.Equal(t, later, a.UpdatedAt)
 	})
 
-	t.Run("verified → verified is invalid transition", func(t *testing.T) {
-		a, _ := account.New("id1", "user@example.com", "Léa", "Dupont", dob, now)
+	t.Run("active → active is invalid transition", func(t *testing.T) {
+		a, _ := account.New("id1", "user@example.com", now)
 		_ = a.Verify(later)
 		err := a.Verify(later)
 		require.ErrorIs(t, err, account.ErrInvalidTransition)
 	})
 
-	t.Run("disabled → verified is invalid transition", func(t *testing.T) {
-		a, _ := account.New("id1", "user@example.com", "Léa", "Dupont", dob, now)
+	t.Run("suspended → active is invalid transition", func(t *testing.T) {
+		a, _ := account.New("id1", "user@example.com", now)
 		_ = a.Verify(later)
 		_ = a.Disable(later)
 		err := a.Verify(later)
@@ -115,21 +91,21 @@ func TestVerify_Transitions(t *testing.T) {
 func TestDisable_Transitions(t *testing.T) {
 	later := now.Add(time.Hour)
 
-	t.Run("verified → disabled OK", func(t *testing.T) {
-		a, _ := account.New("id1", "user@example.com", "Léa", "Dupont", dob, now)
+	t.Run("active → suspended OK", func(t *testing.T) {
+		a, _ := account.New("id1", "user@example.com", now)
 		_ = a.Verify(later)
 		require.NoError(t, a.Disable(later))
-		assert.Equal(t, account.StatusDisabled, a.Status)
+		assert.Equal(t, account.StatusSuspended, a.Status)
 	})
 
-	t.Run("pending → disabled OK", func(t *testing.T) {
-		a, _ := account.New("id1", "user@example.com", "Léa", "Dupont", dob, now)
+	t.Run("pending → suspended OK", func(t *testing.T) {
+		a, _ := account.New("id1", "user@example.com", now)
 		require.NoError(t, a.Disable(later))
-		assert.Equal(t, account.StatusDisabled, a.Status)
+		assert.Equal(t, account.StatusSuspended, a.Status)
 	})
 
-	t.Run("disabled → disabled is invalid transition", func(t *testing.T) {
-		a, _ := account.New("id1", "user@example.com", "Léa", "Dupont", dob, now)
+	t.Run("suspended → suspended is invalid transition", func(t *testing.T) {
+		a, _ := account.New("id1", "user@example.com", now)
 		_ = a.Disable(later)
 		err := a.Disable(later)
 		require.ErrorIs(t, err, account.ErrInvalidTransition)

@@ -12,6 +12,8 @@ backend/dist/
 backend/tmp/
 backend/coverage.out
 backend/*.test
+backend/server
+backend/scratch/
 backend/data/*.db
 backend/data/*.db-shm
 backend/data/*.db-wal
@@ -41,6 +43,13 @@ frontend/.vercel/
 !.claude/settings.json
 .aider*
 .cursor/
+.agent/
+
+# Gemini (agents)
+.gemini/
+gha-creds-*.json
+.github/workflows/gemini*
+.github/commands/gemini*
 
 # Build artefacts
 docs/dossier/build/*.pdf
@@ -63,3 +72,12 @@ uploads/
 
 # OS
 Thumbs.db
+
+
+# Lefthook
+.lefthook/
+
+# CI artefacts générés localement
+backend/gosec.sarif
+frontend/.lighthouseci/
+redocly_output.txt

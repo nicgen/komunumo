@@ -72,6 +72,18 @@ func (r *AccountRepository) UpdatePasswordHash(_ context.Context, id, hash strin
 	return nil
 }
 
+func (r *AccountRepository) UpdateKindAndStatus(_ context.Context, id string, kind account.Kind, status account.Status, at time.Time) error {
+	a, ok := r.byID[id]
+	if !ok {
+		return account.ErrAccountNotFound
+	}
+	a.Kind = kind
+	a.Status = status
+	a.UpdatedAt = at
+	r.byEmail[a.EmailCanonical] = a
+	return nil
+}
+
 func (r *AccountRepository) TouchLastLogin(_ context.Context, id string, at time.Time) error {
 	a, ok := r.byID[id]
 	if !ok {

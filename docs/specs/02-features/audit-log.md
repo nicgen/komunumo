@@ -22,7 +22,7 @@ Garantir l'**intégrité** et la **traçabilité** des actions sensibles. Sceau 
 ## Actions tracées (liste minimum)
 
 | Action | Déclencheur |
-|--------|-------------|
+| -------- | ------------- |
 | `account.register` | UC1, UC2 |
 | `account.verified` | UC4 |
 | `login.ok` / `login.failed` | UC3 |

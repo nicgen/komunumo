@@ -13,28 +13,28 @@ import (
 	"komunumo/backend/internal/domain/token"
 )
 
-func TestTokenRepository_Create_FindActiveByHash(t *testing.T) {
-	conn := openTestDB(t)
-	accountRepo := db.NewAccountRepository(conn)
-	tokenRepo := db.NewTokenRepository(conn)
-
-	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-
-	// Seed an account
+func seedTokenAccount(t *testing.T, accountRepo *db.AccountRepository, now time.Time) {
+	t.Helper()
 	a := &account.Account{
 		ID:             "acc1",
 		Email:          "lea@example.com",
 		EmailCanonical: "lea@example.com",
 		PasswordHash:   "hash",
 		Status:         account.StatusPendingVerification,
-		FirstName:      "Léa",
-		LastName:       "Dupont",
-		DateOfBirth:    time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Kind:           account.KindMember,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
-	err := accountRepo.Create(context.Background(), a)
-	require.NoError(t, err)
+	require.NoError(t, accountRepo.Create(context.Background(), a))
+}
+
+func TestTokenRepository_Create_FindActiveByHash(t *testing.T) {
+	conn := openTestDB(t)
+	accountRepo := db.NewAccountRepository(conn)
+	tokenRepo := db.NewTokenRepository(conn)
+
+	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
+	seedTokenAccount(t, accountRepo, now)
 
 	// Create a token
 	tok := &token.Token{
@@ -45,7 +45,7 @@ func TestTokenRepository_Create_FindActiveByHash(t *testing.T) {
 		CreatedAt: now,
 		ExpiresAt: now.Add(24 * time.Hour),
 	}
-	err = tokenRepo.Create(context.Background(), tok)
+	err := tokenRepo.Create(context.Background(), tok)
 	require.NoError(t, err)
 
 	// Find active by hash
@@ -75,22 +75,7 @@ func TestTokenRepository_FindActiveByHash_Expired(t *testing.T) {
 	tokenRepo := db.NewTokenRepository(conn)
 
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-
-	// Seed an account
-	a := &account.Account{
-		ID:             "acc1",
-		Email:          "lea@example.com",
-		EmailCanonical: "lea@example.com",
-		PasswordHash:   "hash",
-		Status:         account.StatusPendingVerification,
-		FirstName:      "Léa",
-		LastName:       "Dupont",
-		DateOfBirth:    time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
-		CreatedAt:      now,
-		UpdatedAt:      now,
-	}
-	err := accountRepo.Create(context.Background(), a)
-	require.NoError(t, err)
+	seedTokenAccount(t, accountRepo, now)
 
 	// Create an expired token
 	tok := &token.Token{
@@ -101,7 +86,7 @@ func TestTokenRepository_FindActiveByHash_Expired(t *testing.T) {
 		CreatedAt: now.Add(-48 * time.Hour),
 		ExpiresAt: now.Add(-1 * time.Hour),
 	}
-	err = tokenRepo.Create(context.Background(), tok)
+	err := tokenRepo.Create(context.Background(), tok)
 	require.NoError(t, err)
 
 	// Find active by hash — expired token returns ErrTokenExpired, not nil
@@ -116,22 +101,7 @@ func TestTokenRepository_Consume(t *testing.T) {
 	tokenRepo := db.NewTokenRepository(conn)
 
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-
-	// Seed an account
-	a := &account.Account{
-		ID:             "acc1",
-		Email:          "lea@example.com",
-		EmailCanonical: "lea@example.com",
-		PasswordHash:   "hash",
-		Status:         account.StatusPendingVerification,
-		FirstName:      "Léa",
-		LastName:       "Dupont",
-		DateOfBirth:    time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
-		CreatedAt:      now,
-		UpdatedAt:      now,
-	}
-	err := accountRepo.Create(context.Background(), a)
-	require.NoError(t, err)
+	seedTokenAccount(t, accountRepo, now)
 
 	// Create a token
 	tok := &token.Token{
@@ -142,7 +112,7 @@ func TestTokenRepository_Consume(t *testing.T) {
 		CreatedAt: now,
 		ExpiresAt: now.Add(24 * time.Hour),
 	}
-	err = tokenRepo.Create(context.Background(), tok)
+	err := tokenRepo.Create(context.Background(), tok)
 	require.NoError(t, err)
 
 	// Consume the token
@@ -162,22 +132,7 @@ func TestTokenRepository_RevokeActiveForAccount(t *testing.T) {
 	tokenRepo := db.NewTokenRepository(conn)
 
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-
-	// Seed an account
-	a := &account.Account{
-		ID:             "acc1",
-		Email:          "lea@example.com",
-		EmailCanonical: "lea@example.com",
-		PasswordHash:   "hash",
-		Status:         account.StatusPendingVerification,
-		FirstName:      "Léa",
-		LastName:       "Dupont",
-		DateOfBirth:    time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
-		CreatedAt:      now,
-		UpdatedAt:      now,
-	}
-	err := accountRepo.Create(context.Background(), a)
-	require.NoError(t, err)
+	seedTokenAccount(t, accountRepo, now)
 
 	// Create two tokens for the same account
 	tok1 := &token.Token{
@@ -188,7 +143,7 @@ func TestTokenRepository_RevokeActiveForAccount(t *testing.T) {
 		CreatedAt: now,
 		ExpiresAt: now.Add(24 * time.Hour),
 	}
-	err = tokenRepo.Create(context.Background(), tok1)
+	err := tokenRepo.Create(context.Background(), tok1)
 	require.NoError(t, err)
 
 	tok2 := &token.Token{

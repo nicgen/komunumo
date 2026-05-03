@@ -17,12 +17,11 @@ func makeVerifiedAccount(t *testing.T, accounts *fakes.AccountRepository, email,
 	t.Helper()
 	hasher := fakes.NewPasswordHasher()
 	hash, _ := hasher.Hash(password)
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	acc, err := account.New("acc-1", email, "Léa", "Dupont", dob, now)
+	acc, err := account.New("acc-1", email, now)
 	require.NoError(t, err)
 	acc.PasswordHash = hash
-	acc.Status = account.StatusVerified
+	acc.Status = account.StatusActive
 	require.NoError(t, accounts.Create(context.Background(), acc))
 }
 
@@ -93,9 +92,8 @@ func TestLogin_PendingVerification(t *testing.T) {
 
 	hasher := fakes.NewPasswordHasher()
 	hash, _ := hasher.Hash("SecurePass123!")
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	acc, _ := account.New("acc-pending", "pending@example.com", "Jean", "Dupont", dob, now)
+	acc, _ := account.New("acc-pending", "pending@example.com", now)
 	acc.PasswordHash = hash
 	require.NoError(t, accounts.Create(context.Background(), acc))
 

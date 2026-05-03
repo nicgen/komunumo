@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 
+	"komunumo/backend/internal/domain/account"
 	"komunumo/backend/internal/domain/audit"
 	"komunumo/backend/internal/domain/token"
 	"komunumo/backend/internal/ports"
@@ -57,7 +58,7 @@ func (s *VerifyEmailService) VerifyEmail(ctx context.Context, in VerifyEmailInpu
 			return err
 		}
 
-		if err := s.accounts.UpdateStatus(ctx, tok.AccountID, "verified", now); err != nil {
+		if err := s.accounts.UpdateStatus(ctx, tok.AccountID, account.StatusActive, now); err != nil {
 			return err
 		}
 

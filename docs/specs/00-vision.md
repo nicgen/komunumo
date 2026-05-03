@@ -39,7 +39,7 @@ Offrir un outil **souverain, accessible et sobre** au tissu associatif et écono
 ## Mesure du succès
 
 | Indicateur | Cible MVP (démo jury) | Cible 6 mois post-soutenance |
-|------------|----------------------|-------------------------------|
+| ------------ | ---------------------- | ------------------------------- |
 | Associations inscrites | 20 (seed data) | 100 réelles |
 | Comptes utilisateurs | 50 (seed) | 500 réels |
 | Événements créés | 10 | 50/mois |

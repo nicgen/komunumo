@@ -17,7 +17,6 @@ const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
 // AuthHandler wires application services to HTTP.
 // Nil services indicate features not yet wired (returns 501).
 type AuthHandler struct {
-	register       *auth.RegisterService
 	verify         *auth.VerifyEmailService
 	resend         *auth.ResendVerificationService
 	login          *auth.LoginService
@@ -25,10 +24,10 @@ type AuthHandler struct {
 	pwResetRequest *auth.PasswordResetRequestService
 	pwResetConfirm *auth.PasswordResetConfirmService
 	me             *auth.MeService
+	secureCookies  bool
 }
 
 func NewAuthHandler(
-	register *auth.RegisterService,
 	verify *auth.VerifyEmailService,
 	resend *auth.ResendVerificationService,
 	login *auth.LoginService,
@@ -36,98 +35,13 @@ func NewAuthHandler(
 	pwResetRequest *auth.PasswordResetRequestService,
 	pwResetConfirm *auth.PasswordResetConfirmService,
 	me *auth.MeService,
+	secureCookies bool,
 ) *AuthHandler {
 	return &AuthHandler{
-		register: register, verify: verify, resend: resend,
+		verify: verify, resend: resend,
 		login: login, logout: logout,
 		pwResetRequest: pwResetRequest, pwResetConfirm: pwResetConfirm,
-		me: me,
-	}
-}
-
-// --- Register ---
-
-type registerRequest struct {
-	Email       string `json:"email"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	DateOfBirth string `json:"date_of_birth"` // "YYYY-MM-DD"
-	Password    string `json:"password"`
-}
-
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var in auth.RegisterInput
-	isJSON := isJSONRequest(r)
-
-	if isJSON {
-		var req registerRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			jsonError(w, "invalid JSON", http.StatusBadRequest)
-			return
-		}
-		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
-		if err != nil {
-			jsonError(w, "invalid date_of_birth", http.StatusBadRequest)
-			return
-		}
-		in = auth.RegisterInput{
-			Email:       req.Email,
-			FirstName:   req.FirstName,
-			LastName:    req.LastName,
-			DateOfBirth: dob,
-			Password:    req.Password,
-		}
-	} else {
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad form", http.StatusBadRequest)
-			return
-		}
-		dob, err := time.Parse("2006-01-02", r.FormValue("date_of_birth"))
-		if err != nil {
-			http.Error(w, "invalid date_of_birth", http.StatusBadRequest)
-			return
-		}
-		in = auth.RegisterInput{
-			Email:       r.FormValue("email"),
-			FirstName:   r.FormValue("first_name"),
-			LastName:    r.FormValue("last_name"),
-			DateOfBirth: dob,
-			Password:    r.FormValue("password"),
-		}
-	}
-
-	ip := clientIP(r)
-	if err := h.register.Register(r.Context(), ip, in); err != nil {
-		handleRegisterError(w, r, err, isJSON)
-		return
-	}
-
-	if isJSON {
-		w.WriteHeader(http.StatusCreated)
-	} else {
-		http.Redirect(w, r, "/verify-email/sent", http.StatusSeeOther)
-	}
-}
-
-func handleRegisterError(w http.ResponseWriter, _ *http.Request, err error, isJSON bool) {
-	var status int
-	var msg string
-
-	switch {
-	case errors.Is(err, account.ErrAgeBelow16):
-		status, msg = http.StatusBadRequest, "vous devez avoir au moins 16 ans"
-	case errors.Is(err, account.ErrEmailMalformed):
-		status, msg = http.StatusBadRequest, "adresse email invalide"
-	case errors.Is(err, account.ErrPasswordTooShort), errors.Is(err, account.ErrPasswordTooWeak):
-		status, msg = http.StatusBadRequest, "mot de passe trop faible"
-	default:
-		status, msg = http.StatusInternalServerError, "erreur interne"
-	}
-
-	if isJSON {
-		jsonError(w, msg, status)
-	} else {
-		http.Error(w, msg, status)
+		me: me, secureCookies: secureCookies,
 	}
 }
 
@@ -285,8 +199,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    out.SessionID,
 		MaxAge:   sessionCookieMaxAge,
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   h.secureCookies,
+		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
 
@@ -340,8 +254,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   h.secureCookies,
+		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
 
@@ -481,9 +395,8 @@ func handlePasswordResetConfirmError(w http.ResponseWriter, _ *http.Request, err
 type meResponse struct {
 	AccountID string `json:"account_id"`
 	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
 	Status    string `json:"status"`
+	Kind      string `json:"kind"`
 }
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
@@ -508,9 +421,8 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(meResponse{
 		AccountID: out.AccountID,
 		Email:     out.Email,
-		FirstName: out.FirstName,
-		LastName:  out.LastName,
 		Status:    string(out.Status),
+		Kind:      string(out.Kind),
 	})
 }
 

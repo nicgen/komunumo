@@ -1,0 +1,30 @@
+commit-msg:
+  commands:
+    commitlint:
+      run: NODE_PATH=./frontend/node_modules npx --prefix frontend commitlint --edit {1}
+
+pre-commit:
+  commands:
+    gitleaks:
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --redact --no-banner
+        else
+          echo "⚠ gitleaks non installé — scan ignoré. Installe-le : https://github.com/gitleaks/gitleaks"
+        fi
+
+pre-push:
+  parallel: true
+  commands:
+    backend-tests:
+      root: backend/
+      run: go test ./cmd/... ./internal/...
+    frontend-lint:
+      root: frontend/
+      run: pnpm lint
+    frontend-typecheck:
+      root: frontend/
+      run: pnpm typecheck
+    frontend-tests:
+      root: frontend/
+      run: pnpm test

@@ -13,8 +13,11 @@ type Querier interface {
 	ConsumeEmailVerification(ctx context.Context, arg ConsumeEmailVerificationParams) error
 	ConsumePasswordReset(ctx context.Context, arg ConsumePasswordResetParams) error
 	CreateAccount(ctx context.Context, arg CreateAccountParams) error
+	CreateAssociation(ctx context.Context, arg CreateAssociationParams) error
 	// Email Verification Queries
 	CreateEmailVerification(ctx context.Context, arg CreateEmailVerificationParams) error
+	CreateMember(ctx context.Context, arg CreateMemberParams) error
+	CreateMembership(ctx context.Context, arg CreateMembershipParams) error
 	// Password Reset Queries
 	CreatePasswordReset(ctx context.Context, arg CreatePasswordResetParams) error
 	// Session Queries
@@ -26,13 +29,20 @@ type Querier interface {
 	GetAccountByID(ctx context.Context, id string) (Account, error)
 	GetActiveEmailVerificationByHash(ctx context.Context, arg GetActiveEmailVerificationByHashParams) (EmailVerification, error)
 	GetActivePasswordResetByHash(ctx context.Context, arg GetActivePasswordResetByHashParams) (PasswordReset, error)
+	GetAssociationByAccountID(ctx context.Context, accountID string) (Association, error)
+	GetMemberByAccountID(ctx context.Context, accountID string) (Member, error)
+	GetMembershipByAccountIDs(ctx context.Context, arg GetMembershipByAccountIDsParams) (Membership, error)
 	GetSessionByID(ctx context.Context, id string) (Session, error)
 	RevokeActiveEmailVerificationsForAccount(ctx context.Context, arg RevokeActiveEmailVerificationsForAccountParams) error
 	RevokeActivePasswordResetsForAccount(ctx context.Context, arg RevokeActivePasswordResetsForAccountParams) error
 	TouchAccountLastLogin(ctx context.Context, arg TouchAccountLastLoginParams) error
 	TouchSessionLastSeen(ctx context.Context, arg TouchSessionLastSeenParams) error
+	UpdateAccountKind(ctx context.Context, arg UpdateAccountKindParams) error
+	UpdateAccountKindAndStatus(ctx context.Context, arg UpdateAccountKindAndStatusParams) error
 	UpdateAccountPasswordHash(ctx context.Context, arg UpdateAccountPasswordHashParams) error
 	UpdateAccountStatus(ctx context.Context, arg UpdateAccountStatusParams) error
+	UpdateAssociation(ctx context.Context, arg UpdateAssociationParams) error
+	UpdateMember(ctx context.Context, arg UpdateMemberParams) error
 }
 
 var _ Querier = (*Queries)(nil)

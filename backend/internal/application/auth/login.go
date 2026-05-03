@@ -86,7 +86,7 @@ func (s *LoginService) Login(ctx context.Context, in LoginInput) (LoginOutput, e
 		return LoginOutput{}, ErrInvalidCredentials
 	}
 
-	if acc.Status == account.StatusDisabled {
+	if acc.Status == account.StatusSuspended {
 		return LoginOutput{}, account.ErrAccountDisabled
 	}
 

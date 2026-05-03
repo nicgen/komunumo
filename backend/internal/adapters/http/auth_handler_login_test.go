@@ -28,13 +28,12 @@ func newLoginHandler(t *testing.T) (*httpadapter.AuthHandler, *fakes.AccountRepo
 	rl := fakes.NewRateLimiter()
 	uow := fakes.NewUnitOfWork()
 
-	registerSvc := auth.NewRegisterService(accounts, fakes.NewTokenRepository(), auditLog, fakes.NewEmailSender(), hasher, tokenGen, clk, rl, uow)
 	verifySvc := auth.NewVerifyEmailService(accounts, fakes.NewTokenRepository(), auditLog, tokenGen, clk, uow)
 	resendSvc := auth.NewResendVerificationService(accounts, fakes.NewTokenRepository(), auditLog, fakes.NewEmailSender(), tokenGen, clk, rl, uow)
 	loginSvc := auth.NewLoginService(accounts, sessions, auditLog, hasher, tokenGen, clk, rl, uow)
 	logoutSvc := auth.NewLogoutService(sessions, auditLog, tokenGen, clk)
 
-	handler := httpadapter.NewAuthHandler(registerSvc, verifySvc, resendSvc, loginSvc, logoutSvc, nil, nil, nil)
+	handler := httpadapter.NewAuthHandler(verifySvc, resendSvc, loginSvc, logoutSvc, nil, nil, nil, false)
 	return handler, accounts, sessions
 }
 
@@ -42,12 +41,11 @@ func seedVerifiedAccount(t *testing.T, accounts *fakes.AccountRepository, email,
 	t.Helper()
 	hasher := fakes.NewPasswordHasher()
 	hash, _ := hasher.Hash(password)
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	acc, err := account.New("acc-1", email, "Léa", "Dupont", dob, now)
+	acc, err := account.New("acc-1", email, now)
 	require.NoError(t, err)
 	acc.PasswordHash = hash
-	acc.Status = account.StatusVerified
+	acc.Status = account.StatusActive
 	require.NoError(t, accounts.Create(t.Context(), acc))
 }
 
@@ -104,9 +102,8 @@ func TestLoginHandler_Unverified_403(t *testing.T) {
 
 	hasher := fakes.NewPasswordHasher()
 	hash, _ := hasher.Hash("SecurePass123!")
-	dob := time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	acc, _ := account.New("acc-pending", "pending@example.com", "Jean", "Dupont", dob, now)
+	acc, _ := account.New("acc-pending", "pending@example.com", now)
 	acc.PasswordHash = hash
 	require.NoError(t, accounts.Create(t.Context(), acc))
 

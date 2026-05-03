@@ -3,7 +3,7 @@
 ## Glossaire
 
 | Terme | Définition |
-|-------|------------|
+| ------- | ------------ |
 | **Compte** (Account) | Une identité authentifiable. Soit un compte personnel (Member), soit un compte association (Association). Un compte = un email unique. |
 | **Personne** (Member) | Compte représentant un individu (bénévole, adhérent, salarié). Possède un nom, prénom, date de naissance, etc. |
 | **Association** | Compte représentant une entité morale (asso loi 1901, TPE, collectif). Possède un nom moral, optionnellement SIREN/RNA, code postal de référence. |
@@ -35,7 +35,7 @@
 ## Permissions de référence
 
 | Action | Member | Asso owner | Asso admin | Asso member |
-|--------|--------|------------|------------|-------------|
+| -------- | -------- | ------------ | ------------ | ------------- |
 | Publier post personnel | Oui | - | - | - |
 | Publier post asso | - | Oui | Oui | Non |
 | Inviter dans asso | - | Oui | Oui | Non |
