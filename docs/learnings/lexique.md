@@ -146,6 +146,36 @@ Termes techniques et métier à maîtriser pour la soutenance.
 
 ---
 
+## Standards & Spécifications
+
+### Versionnement d'une spécification (norme)
+
+**Définition :** Le versionnement d'une norme (ex. OpenAPI, HTTP, JSON Schema) suit une logique différente du versionnement logiciel. Les trois niveaux ont des significations précises :
+
+- **Version majeure** (ex. 3 → 4) : rupture de compatibilité, changements de paradigme
+- **Version mineure** (ex. 3.1 → 3.2) : ajout de fonctionnalités, rétrocompatible
+- **Patch** (ex. 3.1.0 → 3.1.1) : corrections **éditoriales uniquement** — fautes de frappe, ambiguïtés clarifiées, exemples incorrects, liens cassés. Aucun changement de comportement ou de validation. Un document valide en 3.1.0 est valide en 3.1.2 sans aucune modification.
+
+**Conséquence pratique :** déclarer `openapi: "3.1.0"` dans un fichier reste valide face à un outil qui supporte 3.1.2. La version dans l'en-tête est informative, pas contractuelle au niveau patch.
+
+**Termes associés :** SemVer, rétrocompatibilité, spécification, norme
+
+**Dans le projet :** `docs/specs/03-api/openapi.yaml` — déclaré en OpenAPI 3.1.0
+
+---
+
+### OpenAPI
+
+**Définition :** Spécification standard (anciennement Swagger) pour décrire des API REST de manière lisible par les humains et les machines. Permet de générer de la documentation interactive, des clients, et de valider les contrats d'API.
+
+**Versions clés :** 3.0.x (courante), 3.1.0 (alignée JSON Schema Draft 2020-12), 3.2.0 (sept. 2025)
+
+**Termes associés :** contrat d'API, JSON Schema, Swagger, Redocly
+
+**Dans le projet :** `docs/specs/03-api/openapi.yaml`, validé en CI par `@redocly/cli`
+
+---
+
 ## Méthodes & Processus
 
 ### Conventional Commits
