@@ -70,7 +70,7 @@ Lefthook est la première ligne — si ça passe en local, la CI a de bonnes cha
 **Scopes commitlint** : les scopes sont une liste fermée dans `commitlint.config.mjs`. Ajouter un scope en cours de projet (ex. `profiles`) nécessite de mettre à jour cette liste **avant** de commiter avec ce scope, sinon le job `commitlint` de la PR échoue en erreur bloquante.
 
 **Scope-enum actuel** :
-`auth`, `posts`, `chat`, `notif`, `profile`, `profiles`, `follows`, `groups`, `events`, `search`, `audit`, `rgpd`, `db`, `api`, `web`, `ws`, `ops`, `adr`, `specs`, `docs`, `ci`, `deps`, `scaffold`, `release`, `learnings`
+`auth`, `backend`, `frontend`, `posts`, `chat`, `notif`, `profile`, `profiles`, `follows`, `groups`, `events`, `search`, `audit`, `rgpd`, `db`, `api`, `web`, `ws`, `ops`, `adr`, `specs`, `docs`, `ci`, `deps`, `scaffold`, `release`, `learnings`
 
 **footer-leading-blank** : avertissement non bloquant — une ligne vide manque avant le footer d'un commit (ex. `Co-authored-by`, `Closes #n`). Warning, pas error.
 
