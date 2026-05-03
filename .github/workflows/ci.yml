@@ -142,9 +142,10 @@ jobs:
       - name: validate Mermaid
         continue-on-error: true
         run: |
+          sudo apt-get update && sudo apt-get install -y chromium-browser
           npm install -g @mermaid-js/mermaid-cli
           for f in docs/diagrams/*.mmd docs/specs/04-data/*.mmd; do
-            mmdc -i "$f" -o /tmp/$(basename "$f" .mmd).svg
+            mmdc -p puppeteer-config.json -i "$f" -o /tmp/$(basename "$f" .mmd).svg
           done
 
   # ------------------------------------------------------------------
