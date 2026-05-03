@@ -105,6 +105,8 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+    env:
+      KOMUNUMO_API_INTERNAL_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
