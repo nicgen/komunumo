@@ -10,6 +10,12 @@ services:
       - sonar_data:/opt/sonarqube/data
       - sonar_extensions:/opt/sonarqube/extensions
       - sonar_logs:/opt/sonarqube/logs
+    networks:
+      - sonar
+
+networks:
+  sonar:
+    name: sonar-net
 
 volumes:
   sonar_data:

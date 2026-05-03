@@ -32,8 +32,8 @@ sonar: ## Analyse complète du projet (SonarQube doit être démarré)
 	@cd backend && go test -coverprofile=coverage.out ./cmd/... ./internal/...
 	@echo "Lancement du scan SonarQube..."
 	docker run --rm \
-		--network host \
-		-e SONAR_HOST_URL=$(SONAR_URL) \
+		--network sonar-net \
+		-e SONAR_HOST_URL=http://komunumo-sonar:9000 \
 		-e SONAR_TOKEN=$(SONAR_TOKEN) \
 		-v $(PWD):/usr/src \
 		sonarsource/sonar-scanner-cli \
