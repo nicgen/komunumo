@@ -67,3 +67,6 @@ uploads/
 # OS
 Thumbs.db
 
+
+# Lefthook
+.lefthook/

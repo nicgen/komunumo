@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test fixtures and examples"
+paths = [
+  '''backend/.*_test\.go''',
+  '''docs/.*''',
+  '''.*\.example'''
+]
