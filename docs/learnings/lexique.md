@@ -164,6 +164,23 @@ Termes techniques et métier à maîtriser pour la soutenance.
 
 ---
 
+### Mermaid erDiagram — contraintes du parseur
+
+**Définition :** `erDiagram` est le type de diagramme entité-relation de Mermaid. Son parseur est plus strict que la syntaxe ER conceptuelle et impose plusieurs contraintes non documentées clairement.
+
+**Contraintes découvertes sur ce projet :**
+
+- `|` est **réservé aux cardinalités** — dans les chaînes de valeurs (ex. enum), remplacer par `/` : `"public/private"` et non `"public|private"`
+- `UK` (Unique Key) **n'est pas un label de clé valide** — seuls `PK` et `FK` sont supportés
+- `PK_FK` (clé composite) **n'est pas supporté** — utiliser `PK` seul sur la ligne concernée
+- `date` est un **mot-clé réservé** dans d'autres types de diagrammes et provoque un conflit de parsing — utiliser `string` à la place
+
+**Termes associés :** Mermaid, diagramme ER, MCD, entité-relation
+
+**Dans le projet :** `docs/specs/04-data/mcd.mmd`, validé en CI par `@mermaid-js/mermaid-cli`
+
+---
+
 ### OpenAPI
 
 **Définition :** Spécification standard (anciennement Swagger) pour décrire des API REST de manière lisible par les humains et les machines. Permet de générer de la documentation interactive, des clients, et de valider les contrats d'API.
