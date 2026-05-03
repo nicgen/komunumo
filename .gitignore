@@ -43,6 +43,7 @@ frontend/.vercel/
 !.claude/settings.json
 .aider*
 .cursor/
+.agent/
 
 # Build artefacts
 docs/dossier/build/*.pdf
@@ -65,3 +66,4 @@ uploads/
 
 # OS
 Thumbs.db
+

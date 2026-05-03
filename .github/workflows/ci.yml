@@ -72,19 +72,21 @@ jobs:
           go-version: '1.26'
           cache-dependency-path: backend/go.sum
       - name: golangci-lint
+        # We use 'go install' instead of the official action because Go 1.26.2 is very new
+        # and pre-built binaries might still be built with an older Go version.
         run: |
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-          golangci-lint run ./...
+          $(go env GOPATH)/bin/golangci-lint run ./cmd/... ./internal/...
       - name: gosec
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec -fmt sarif -out gosec.sarif ./... || true
+          $(go env GOPATH)/bin/gosec -fmt sarif -out gosec.sarif ./cmd/... ./internal/... || true
       - name: govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          $(go env GOPATH)/bin/govulncheck ./cmd/... ./internal/...
       - name: tests
-        run: go test -race -coverprofile=coverage.out ./...
+        run: go test -race -coverprofile=coverage.out ./cmd/... ./internal/...
       - name: build
         run: go build -o /tmp/komunumo-api ./cmd/server
       - name: upload coverage

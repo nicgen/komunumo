@@ -35,9 +35,9 @@ func decodeNullTime(ns sql.NullString) (*time.Time, error) {
 	return &t, nil
 }
 
-func encodeNullTime(t *time.Time) sql.NullString {
-	if t == nil {
-		return sql.NullString{}
-	}
-	return sql.NullString{String: encodeTime(*t), Valid: true}
-}
+// func encodeNullTime(t *time.Time) sql.NullString {
+// 	if t == nil {
+// 		return sql.NullString{}
+// 	}
+// 	return sql.NullString{String: encodeTime(*t), Valid: true}
+// }

@@ -62,7 +62,7 @@ func CanonicalizeEmail(email string) (string, error) {
 	}
 	local := normalized[:at]
 	domain := normalized[at+1:]
-	if local == "" || domain == "" || strings.Contains(domain, ".") == false {
+	if local == "" || domain == "" || !strings.Contains(domain, ".") {
 		return "", ErrEmailMalformed
 	}
 	return strings.ToLower(normalized), nil
