@@ -70,3 +70,8 @@ Thumbs.db
 
 # Lefthook
 .lefthook/
+
+# CI artefacts générés localement
+backend/gosec.sarif
+frontend/.lighthouseci/
+redocly_output.txt

@@ -118,10 +118,14 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level=high
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - name: lighthouse-ci
+        run: npx --yes @lhci/cli@0.14.0 autorun
+        continue-on-error: true
 
   # ------------------------------------------------------------------
   # Docs: lint markdown, validate Mermaid + OpenAPI
@@ -165,26 +169,58 @@ jobs:
           ignore-unfixed: true
 
   # ------------------------------------------------------------------
-  # SonarCloud (Quality Gate) - réactivé quand SONAR_TOKEN sera configuré
-  # et qu'il y aura du code à analyser. Voir ADR-0008.
+  # CodeQL — SAST GitHub natif (Go + TypeScript). Voir security.md.
   # ------------------------------------------------------------------
-  # sonar:
-  #   needs: [backend, frontend]
-  #   if: always() && github.event_name != 'merge_group'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: backend-coverage
-  #         path: backend/
-  #       continue-on-error: true
-  #     - uses: SonarSource/sonarcloud-github-action@v3
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  codeql:
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [go, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: backend/go.sum
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ------------------------------------------------------------------
+  # SonarCloud — qualité globale + surveillance du code LLM. Voir ADR-0008.
+  # Désactiver : commenter ce job ou supprimer le secret SONAR_TOKEN.
+  # ------------------------------------------------------------------
+  sonar:
+    needs: [backend, frontend]
+    if: always() && github.event_name != 'merge_group'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/
+        continue-on-error: true
+      - uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   # ------------------------------------------------------------------
   # Quality gate: required jobs must not fail (skipped is OK)

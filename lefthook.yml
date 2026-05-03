@@ -1,7 +1,7 @@
 commit-msg:
   commands:
     commitlint:
-      run: npx --prefix frontend commitlint --edit {1}
+      run: NODE_PATH=./frontend/node_modules npx --prefix frontend commitlint --edit {1}
 
 pre-commit:
   commands:
@@ -18,7 +18,7 @@ pre-push:
   commands:
     backend-tests:
       root: backend/
-      run: go test ./...
+      run: go test ./cmd/... ./internal/...
     frontend-lint:
       root: frontend/
       run: pnpm lint
