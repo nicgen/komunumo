@@ -2,7 +2,7 @@
 export
 
 SONAR_URL     ?= http://127.0.0.1:9000
-SONAR_PROJECT := nicgen_komunumo
+SONAR_PROJECT := assolink
 SONAR_NAME    := Komunumo
 
 .PHONY: sonar sonar-start sonar-stop sonar-setup
