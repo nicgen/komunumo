@@ -48,6 +48,8 @@ frontend/.vercel/
 # Gemini (agents)
 .gemini/
 gha-creds-*.json
+.github/workflows/gemini*
+.github/commands/gemini*
 
 # Build artefacts
 docs/dossier/build/*.pdf

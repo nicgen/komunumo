@@ -205,7 +205,7 @@ jobs:
   # ------------------------------------------------------------------
   sonar:
     needs: [backend, frontend]
-    if: always() && github.event_name != 'merge_group'
+    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'merge_group'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
