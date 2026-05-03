@@ -39,7 +39,7 @@ func newPasswordResetHandler(t *testing.T) (
 	pwResetReqSvc := auth.NewPasswordResetRequestService(accounts, tokens, auditLog, emails, tokenGen, clk, rl, uow)
 	pwResetConfSvc := auth.NewPasswordResetConfirmService(accounts, tokens, sessions, auditLog, emails, hasher, tokenGen, clk, uow)
 
-	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, pwResetReqSvc, pwResetConfSvc, nil)
+	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, pwResetReqSvc, pwResetConfSvc, nil, false)
 	return handler, accounts, tokens, emails
 }
 

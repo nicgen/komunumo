@@ -23,7 +23,7 @@ func newMeHandler(t *testing.T) (*httpadapter.AuthHandler, *fakes.SessionReposit
 	accounts := fakes.NewAccountRepository()
 	clk := fakes.NewClock(time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC))
 	meSvc := auth.NewMeService(sessions, accounts, clk)
-	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, nil, nil, meSvc)
+	handler := httpadapter.NewAuthHandler(nil, nil, nil, nil, nil, nil, meSvc, false)
 	return handler, sessions, accounts
 }
 

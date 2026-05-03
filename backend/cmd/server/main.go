@@ -95,7 +95,8 @@ func run(logger *slog.Logger) error {
 	updateProfileSvc := profile.NewUpdateProfileService(accounts, memberRepo, associationRepo, sessionRepo, auditRepo, clk, tokenGen)
 	uploadAvatarSvc := profile.NewUploadAvatarService(accounts, memberRepo, sessionRepo, storage, clk)
 
-	authHandler := httpadapter.NewAuthHandler(verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc)
+	secureCookies := os.Getenv("APP_ENV") == "production"
+	authHandler := httpadapter.NewAuthHandler(verifySvc, resendSvc, loginSvc, logoutSvc, pwResetReqSvc, pwResetConfSvc, meSvc, secureCookies)
 	registerHandler := httpadapter.NewRegisterHandler(registerMemberSvc, registerAssociationSvc)
 	profileHandler := httpadapter.NewProfileHandler(getProfileSvc, updateProfileSvc, uploadAvatarSvc)
 	router := httpadapter.NewRouter(authHandler, registerHandler, profileHandler, sessionRepo, clk)

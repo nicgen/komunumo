@@ -24,6 +24,7 @@ type AuthHandler struct {
 	pwResetRequest *auth.PasswordResetRequestService
 	pwResetConfirm *auth.PasswordResetConfirmService
 	me             *auth.MeService
+	secureCookies  bool
 }
 
 func NewAuthHandler(
@@ -34,12 +35,13 @@ func NewAuthHandler(
 	pwResetRequest *auth.PasswordResetRequestService,
 	pwResetConfirm *auth.PasswordResetConfirmService,
 	me *auth.MeService,
+	secureCookies bool,
 ) *AuthHandler {
 	return &AuthHandler{
 		verify: verify, resend: resend,
 		login: login, logout: logout,
 		pwResetRequest: pwResetRequest, pwResetConfirm: pwResetConfirm,
-		me: me,
+		me: me, secureCookies: secureCookies,
 	}
 }
 
@@ -197,7 +199,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    out.SessionID,
 		MaxAge:   sessionCookieMaxAge,
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
+		Secure:   h.secureCookies,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
@@ -252,7 +254,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
+		Secure:   h.secureCookies,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
