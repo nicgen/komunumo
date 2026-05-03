@@ -39,7 +39,7 @@ export function VerifyEmailConfirmForm({ token }: VerifyEmailConfirmFormProps) {
         const errorData = await response.json();
         setError(errorData.error || "Une erreur est survenue lors de la vérification.");
       }
-    } catch (err) {
+    } catch {
       setError("Erreur de connexion au serveur.");
     } finally {
       setIsLoading(false);

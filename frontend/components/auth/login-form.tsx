@@ -56,7 +56,7 @@ export function LoginForm() {
         const errorData = await response.json();
         setError(errorData.error || "Une erreur est survenue lors de la connexion.");
       }
-    } catch (err) {
+    } catch {
       setError("Erreur de connexion au serveur.");
     } finally {
       setIsLoading(false);

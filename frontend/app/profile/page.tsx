@@ -6,8 +6,13 @@ import { MemberProfileForm } from "@/components/profile/member-profile-form";
 import { AssociationProfileForm } from "@/components/profile/association-profile-form";
 import { Loader2 } from "lucide-react";
 
+type VisibilityKind = "public" | "members_only" | "private";
+type MemberProfile = { kind: "member"; first_name: string; last_name: string; nickname?: string; about_me?: string; visibility: VisibilityKind };
+type AssociationProfile = { kind: "association"; legal_name: string; about?: string; postal_code: string; visibility: VisibilityKind };
+type UserProfile = MemberProfile | AssociationProfile;
+
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +28,7 @@ export default function ProfilePage() {
         } else {
           setError("Impossible de charger le profil");
         }
-      } catch (err) {
+      } catch {
         setError("Erreur de connexion");
       } finally {
         setIsLoading(false);

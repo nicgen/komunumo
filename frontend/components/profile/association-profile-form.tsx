@@ -22,7 +22,7 @@ interface AssociationProfileFormProps {
   initialData: {
     about?: string;
     postal_code: string;
-    visibility: string;
+    visibility: "public" | "members_only" | "private";
   };
 }
 
@@ -39,7 +39,7 @@ export function AssociationProfileForm({ initialData }: AssociationProfileFormPr
     defaultValues: {
       about: initialData.about || "",
       postal_code: initialData.postal_code,
-      visibility: (initialData.visibility as any) || "public",
+      visibility: initialData.visibility || "public",
     },
   });
 
@@ -58,7 +58,7 @@ export function AssociationProfileForm({ initialData }: AssociationProfileFormPr
         const err = await response.json();
         toast.error(err.error || "Une erreur est survenue");
       }
-    } catch (err) {
+    } catch {
       toast.error("Erreur de connexion");
     } finally {
       setIsLoading(false);
@@ -79,6 +79,7 @@ export function AssociationProfileForm({ initialData }: AssociationProfileFormPr
           {...register("about")}
         />
         <p className="text-[10px] text-muted-foreground text-right">
+          {/* eslint-disable-next-line react-hooks/incompatible-library */}
           {watch("about")?.length || 0}/2000
         </p>
         {errors.about && (

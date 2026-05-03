@@ -75,7 +75,7 @@ export function ResetPasswordConfirmForm({ token }: ResetPasswordConfirmFormProp
         const errorData = await response.json();
         setError(errorData.error || "Une erreur est survenue.");
       }
-    } catch (err) {
+    } catch {
       setError("Erreur de connexion au serveur.");
     } finally {
       setIsLoading(false);

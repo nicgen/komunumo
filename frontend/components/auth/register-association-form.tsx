@@ -89,7 +89,7 @@ export function RegisterAssociationForm() {
         const errorData = await response.json();
         setError(errorData.error || "Une erreur est survenue lors de l'inscription.");
       }
-    } catch (err) {
+    } catch {
       setError("Erreur de connexion au serveur.");
     } finally {
       setIsLoading(false);

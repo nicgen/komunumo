@@ -22,7 +22,7 @@ interface MemberProfileFormProps {
   initialData: {
     nickname?: string;
     about_me?: string;
-    visibility: string;
+    visibility: "public" | "members_only" | "private";
   };
 }
 
@@ -39,7 +39,7 @@ export function MemberProfileForm({ initialData }: MemberProfileFormProps) {
     defaultValues: {
       nickname: initialData.nickname || "",
       about_me: initialData.about_me || "",
-      visibility: (initialData.visibility as any) || "public",
+      visibility: initialData.visibility || "public",
     },
   });
 
@@ -58,7 +58,7 @@ export function MemberProfileForm({ initialData }: MemberProfileFormProps) {
         const err = await response.json();
         toast.error(err.error || "Une erreur est survenue");
       }
-    } catch (err) {
+    } catch {
       toast.error("Erreur de connexion");
     } finally {
       setIsLoading(false);
@@ -94,6 +94,7 @@ export function MemberProfileForm({ initialData }: MemberProfileFormProps) {
           {...register("about_me")}
         />
         <p className="text-[10px] text-muted-foreground text-right">
+          {/* eslint-disable-next-line react-hooks/incompatible-library */}
           {watch("about_me")?.length || 0}/500
         </p>
         {errors.about_me && (

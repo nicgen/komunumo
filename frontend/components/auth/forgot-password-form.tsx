@@ -39,7 +39,7 @@ export function ForgotPasswordForm() {
     setError(null);
 
     try {
-      const response = await fetch("/api/v1/auth/password-reset/request", {
+      await fetch("/api/v1/auth/password-reset/request", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +49,7 @@ export function ForgotPasswordForm() {
 
       // Always redirect to sent page (anti-enumeration)
       router.push("/reset-password/sent");
-    } catch (err) {
+    } catch {
       setError("Erreur de connexion au serveur.");
     } finally {
       setIsLoading(false);
