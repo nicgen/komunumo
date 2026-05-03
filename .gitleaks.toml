@@ -8,3 +8,9 @@ paths = [
   '''docs/.*''',
   '''.*\.example'''
 ]
+
+[[allowlists]]
+description = "Makefile variable references (not real secrets)"
+regexes = [
+  '''\$\([A-Z_]*TOKEN[A-Z_]*\)'''
+]
