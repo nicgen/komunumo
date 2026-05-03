@@ -5,7 +5,6 @@
 *.pem
 *.key
 1password-secrets.json
-.sonar-token
 
 # Backend Go
 backend/bin/

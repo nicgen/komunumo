@@ -1,5 +1,7 @@
+-include .env
+export
+
 SONAR_URL     ?= http://localhost:9000
-SONAR_TOKEN   ?= $(shell cat .sonar-token 2>/dev/null)
 SONAR_PROJECT := nicgen_komunumo
 
 .PHONY: sonar sonar-start sonar-stop
@@ -14,7 +16,7 @@ sonar-stop:
 sonar: ## Analyse complète du projet (SonarQube doit être démarré)
 	@if [ -z "$(SONAR_TOKEN)" ]; then \
 		echo "SONAR_TOKEN manquant. Créer un token sur $(SONAR_URL)/account/security puis :"; \
-		echo "  echo <token> > .sonar-token"; \
+		echo "  Ajoute SONAR_TOKEN=<token> dans .env"; \
 		exit 1; \
 	fi
 	@echo "Génération de la couverture backend..."
