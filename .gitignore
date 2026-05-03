@@ -81,3 +81,4 @@ Thumbs.db
 backend/gosec.sarif
 frontend/.lighthouseci/
 redocly_output.txt
+backend/cookies.txt

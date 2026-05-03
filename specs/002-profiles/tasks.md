@@ -144,21 +144,21 @@ curl -sb /tmp/cookies -X PATCH http://localhost:8080/api/v1/me/profile \
 
 ### Tests — US3
 
-- [ ] T040 [US3] Écrire `backend/internal/application/profile/get_profile_test.go` : GetMyProfile retourne MemberProfile ou AssociationProfile selon kind, session invalide → ErrUnauthorized
-- [ ] T041 [P] [US3] Écrire `backend/internal/application/profile/update_profile_test.go` : UpdateProfile met à jour nickname+about_me, about_me > 500 → erreur, audit_log("profile.updated") appelé
-- [ ] T042 [P] [US3] Écrire `backend/internal/application/profile/upload_avatar_test.go` : UploadAvatar stocke le fichier et retourne l'URL, taille > 2 Mo → erreur, MIME invalide → erreur
+- [X] T040 [US3] Écrire `backend/internal/application/profile/get_profile_test.go` : GetMyProfile retourne MemberProfile ou AssociationProfile selon kind, session invalide → ErrUnauthorized
+- [X] T041 [P] [US3] Écrire `backend/internal/application/profile/update_profile_test.go` : UpdateProfile met à jour nickname+about_me, about_me > 500 → erreur, audit_log("profile.updated") appelé
+- [X] T042 [P] [US3] Écrire `backend/internal/application/profile/upload_avatar_test.go` : UploadAvatar stocke le fichier et retourne l'URL, taille > 2 Mo → erreur, MIME invalide → erreur
 
 ### Implémentation — US3
 
-- [ ] T043 [US3] Créer `backend/internal/application/profile/get_profile.go` : struct GetProfileService + func GetMyProfile(ctx, sessionID) (ProfileOutput, error) — discriminé par kind (dépend de T040)
-- [ ] T044 [US3] Créer `backend/internal/application/profile/update_profile.go` : func UpdateProfile(ctx, sessionID, UpdateProfileInput) error + audit_log (dépend de T041)
-- [ ] T045 [US3] Créer `backend/internal/application/profile/upload_avatar.go` : func UploadAvatar(ctx, sessionID, io.Reader, size, mimeType) (string, error) — délègue à FileStore (dépend de T042)
-- [ ] T046 [US3] Écrire `backend/internal/adapters/http/profile_handler_test.go` : GET /me/profile 200 (member+asso), PATCH /me/profile 200, 401 sans session, POST /me/avatar 200
-- [ ] T047 [US3] Créer `backend/internal/adapters/http/profile_handler.go` : HandleGetMyProfile + HandleUpdateMyProfile + HandleUploadAvatar (dépend de T046)
-- [ ] T048 [US3] Mettre à jour `backend/internal/adapters/http/router.go` : GET/PATCH /api/v1/me/profile, POST /api/v1/me/avatar
-- [ ] T049 [P] [US3] Créer `frontend/components/profile/member-profile-form.tsx` : formulaire édition profil Personne (nickname, about_me, visibility) — aria-describedby RGAA
-- [ ] T050 [P] [US3] Créer `frontend/components/profile/association-profile-form.tsx` : formulaire édition profil Association (about, visibility, postal_code) — aria-describedby RGAA
-- [ ] T051 [US3] Créer `frontend/app/profile/page.tsx` : page profil connecté — charge GET /me/profile, affiche le bon formulaire selon kind, soumet PATCH
+- [X] T043 [US3] Créer `backend/internal/application/profile/get_profile.go` : struct GetProfileService + func GetMyProfile(ctx, sessionID) (ProfileOutput, error) — discriminé par kind (dépend de T040)
+- [X] T044 [US3] Créer `backend/internal/application/profile/update_profile.go` : func UpdateProfile(ctx, sessionID, UpdateProfileInput) error + audit_log (dépend de T041)
+- [X] T045 [US3] Créer `backend/internal/application/profile/upload_avatar.go` : func UploadAvatar(ctx, sessionID, io.Reader, size, mimeType) (string, error) — délègue à FileStore (dépend de T042)
+- [X] T046 [US3] Écrire `backend/internal/adapters/http/profile_handler_test.go` : GET /me/profile 200 (member+asso), PATCH /me/profile 200, 401 sans session, POST /me/avatar 200
+- [X] T047 [US3] Créer `backend/internal/adapters/http/profile_handler.go` : HandleGetMyProfile + HandleUpdateMyProfile + HandleUploadAvatar (dépend de T046)
+- [X] T048 [US3] Mettre à jour `backend/internal/adapters/http/router.go` : GET/PATCH /api/v1/me/profile, POST /api/v1/me/avatar
+- [X] T049 [P] [US3] Créer `frontend/components/profile/member-profile-form.tsx` : formulaire édition profil Personne (nickname, about_me, visibility) — aria-describedby RGAA
+- [X] T050 [P] [US3] Créer `frontend/components/profile/association-profile-form.tsx` : formulaire édition profil Association (about, visibility, postal_code) — aria-describedby RGAA
+- [X] T051 [US3] Créer `frontend/app/profile/page.tsx` : page profil connecté — charge GET /me/profile, affiche le bon formulaire selon kind, soumet PATCH
 
 **Checkpoint**: US3 complète — un utilisateur connecté peut voir et modifier son profil ; avatar uploadable.
 
