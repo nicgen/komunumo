@@ -24,29 +24,21 @@ sonar-setup: ## Crée le projet dans SonarQube local (une seule fois)
 		-d "name=$(SONAR_NAME)&project=$(SONAR_PROJECT)" | grep -q '"key"' \
 		&& echo "Projet créé." || echo "Projet déjà existant ou erreur (vérifier $(SONAR_URL))."
 
-sonar-sync-rules: ## Importe les quality profiles SonarCloud → SonarQube local
+sonar-sync-rules: ## Vérifie l'alignement des quality profiles SonarCloud ↔ local
 	@if [ -z "$(SONAR_CLOUD_TOKEN)" ]; then \
-		echo "SONAR_CLOUD_TOKEN manquant. Ajoute dans .env le token SonarCloud (celui du secret GitHub)."; \
-		exit 1; \
+		echo "SONAR_CLOUD_TOKEN manquant dans .env"; exit 1; \
 	fi
-	@if [ -z "$(SONAR_TOKEN)" ]; then echo "SONAR_TOKEN manquant dans .env"; exit 1; fi
-	@echo "Export des quality profiles depuis SonarCloud (org: $(SONAR_CLOUD_ORG))..."
-	@for lang in go js ts; do \
-		echo "  → $$lang"; \
-		curl -sf -u "$(SONAR_CLOUD_TOKEN):" \
-			"$(SONAR_CLOUD_URL)/api/qualityprofiles/export?organization=$(SONAR_CLOUD_ORG)&language=$$lang" \
-			-o /tmp/sonar-profile-$$lang.xml || echo "    Pas de profil custom pour $$lang (profil Sonar Way par défaut)"; \
-	done
-	@echo "Import dans SonarQube local..."
-	@for lang in go js ts; do \
-		if [ -f /tmp/sonar-profile-$$lang.xml ] && [ -s /tmp/sonar-profile-$$lang.xml ]; then \
-			curl -sf -u "$(SONAR_TOKEN):" \
-				-F "backup=@/tmp/sonar-profile-$$lang.xml" \
-				"$(SONAR_URL)/api/qualityprofiles/restore" \
-				&& echo "  ✓ $$lang importé" || echo "  ✗ $$lang échec import"; \
-		fi; \
-	done
-	@echo "Profils synchronisés. Vérifie : $(SONAR_URL)/profiles"
+	@echo "Profils actifs sur SonarCloud (org: $(SONAR_CLOUD_ORG)) :"
+	@curl -sf -u "$(SONAR_CLOUD_TOKEN):" \
+		"$(SONAR_CLOUD_URL)/api/qualityprofiles/search?organization=$(SONAR_CLOUD_ORG)" \
+		| python3 -c "import sys,json; [print('  $$lang → '+p['name']+' ('+str(p['activeRuleCount'])+' règles)') for p in json.load(sys.stdin)['profiles'] for lang in [p['language']] if lang in ('go','js','ts')]"
+	@echo "Profils actifs en local :"
+	@curl -sf -u "$(SONAR_TOKEN):" \
+		"$(SONAR_URL)/api/qualityprofiles/search" \
+		| python3 -c "import sys,json; [print('  $$lang → '+p['name']+' ('+str(p['activeRuleCount'])+' règles)') for p in json.load(sys.stdin)['profiles'] if p.get('isDefault') and p['language'] in ('go','js','ts')]"
+	@echo ""
+	@echo "Note : 'Sonar way' est identique sur SonarCloud et SonarQube local."
+	@echo "Seul un profil custom dans SonarCloud nécessiterait une synchro manuelle."
 
 sonar: ## Analyse complète du projet (SonarQube doit être démarré)
 	@if [ -z "$(SONAR_TOKEN)" ]; then \
