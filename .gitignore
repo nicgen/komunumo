@@ -45,6 +45,10 @@ frontend/.vercel/
 .cursor/
 .agent/
 
+# Gemini (agents)
+.gemini/
+gha-creds-*.json
+
 # Build artefacts
 docs/dossier/build/*.pdf
 docs/dossier/build/*.tex
